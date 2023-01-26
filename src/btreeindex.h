@@ -18,7 +18,7 @@ namespace ruru
             index_[key] = value;
         }
 
-        bool Exists(const K& key)
+        bool Exists(const K &key)
         {
             return index_.find(key) != index_.end();
         }
@@ -61,8 +61,8 @@ namespace ruru
             std::vector<K> result;
             size_t s = index_.size();
             result.resize(s);
-            size_t i =0;
-            for ( auto&& it: index_)
+            size_t i = 0;
+            for (auto &&it : index_)
             {
                 result[i] = it.first;
                 i++;

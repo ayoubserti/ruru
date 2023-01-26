@@ -10,8 +10,7 @@ namespace ruru
 
     Database::Database(const std::string &name) : name(name) {}
 
-
-    Database* Database::newDatabase(const std::string &name)
+    Database *Database::newDatabase(const std::string &name)
     {
         return new Database(name);
     }

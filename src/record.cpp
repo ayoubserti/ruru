@@ -26,17 +26,17 @@ namespace ruru
         {
         case DataTypes::eInteger:
         {
-            rec.value_.reset((char *)malloc( sizeof(int64_t)));
-            stream.read(rec.value_.get(), sizeof(uint64_t)); //TODO: manage endiness
+            rec.value_.reset((char *)malloc(sizeof(int64_t)));
+            stream.read(rec.value_.get(), sizeof(uint64_t)); // TODO: manage endiness
         }
-            break;
+        break;
 
         case DataTypes::eDouble:
-            {
-            rec.value_.reset((char *)malloc( sizeof(double)));
-            stream.read(rec.value_.get(), sizeof(double)); //TODO: manage endiness
-            }
-         break;
+        {
+            rec.value_.reset((char *)malloc(sizeof(double)));
+            stream.read(rec.value_.get(), sizeof(double)); // TODO: manage endiness
+        }
+        break;
         case DataTypes::eVarChar:
         {
             // read the length
@@ -75,7 +75,7 @@ namespace ruru
         {
         case DataTypes::eInteger:
             stream.write(reinterpret_cast<const char *>(rec.value_.get()), sizeof(uint64_t));
-             break;
+            break;
         case DataTypes::eDouble:
             stream.write(reinterpret_cast<const char *>(rec.value_.get()), sizeof(double));
             break;
@@ -83,7 +83,7 @@ namespace ruru
         {
             // read the length
             uint64_t len = *(uint64_t *)(rec.value_.get());
-            stream.write(reinterpret_cast<const char *>(rec.value_.get()), len +sizeof(len) );
+            stream.write(reinterpret_cast<const char *>(rec.value_.get()), len + sizeof(len));
             break;
         }
         case DataTypes::eBinary:
@@ -99,11 +99,8 @@ namespace ruru
     // Field
 
     Field::Field()
-    :name_("")
-    ,type_(DataTypes::eUnknown)
-    ,value_(nullptr)
+        : name_(""), type_(DataTypes::eUnknown), value_(nullptr)
     {
-
     }
 
     void Field::Reset()

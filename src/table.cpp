@@ -43,7 +43,7 @@ namespace ruru
         return !isNullable;
     }
 
-    Table::Table(std::string name, Database* db) : name(std::move(name)) , database(db) {}
+    Table::Table(std::string name, Database *db) : name(std::move(name)), database(db) {}
 
     void Table::addColumn(const Column &col)
     {
@@ -120,39 +120,36 @@ namespace ruru
         return rectbl;
     }
 
-
-    RecordTable* Table::_CreateRecordTableFromRec(  Record* rec)
+    RecordTable *Table::_CreateRecordTableFromRec(Record *rec)
     {
         RecordTable *rectbl = new RecordTable(this, rec);
         rectbl->type = RecordType::eModifyed;
         return rectbl;
     }
 
-    ResultSet* Table::Search(const Filters_t& filters)
+    ResultSet *Table::Search(const Filters_t &filters)
     {
-        ResultSet* result = new ResultSet(filters);
+        ResultSet *result = new ResultSet(filters);
         result->table_ = this;
 
-        //apply the search in the StorageEngine and retrieve list of record Id
-        StorageEngine* store = database->getStorageEngine(getName());
+        // apply the search in the StorageEngine and retrieve list of record Id
+        StorageEngine *store = database->getStorageEngine(getName());
         auto rows = store->Lookup(filters);
         result->records_id_ = rows;
         return result;
     }
 
-
-    RecordTable*  Table::GetRecord( RecordId id)
+    RecordTable *Table::GetRecord(RecordId id)
     {
-        //id is internal ID ( rowid)
-        RecordTable* rectable = nullptr;
-        StorageEngine * store = getDatabase()->getStorageEngine(getName());
-        Record* rec = store->LoadRecord(id);
-        if ( rec != nullptr)
+        // id is internal ID ( rowid)
+        RecordTable *rectable = nullptr;
+        StorageEngine *store = getDatabase()->getStorageEngine(getName());
+        Record *rec = store->LoadRecord(id);
+        if (rec != nullptr)
         {
             rectable = _CreateRecordTableFromRec(rec);
         }
         return rectable;
-        
     }
 
     // RecordTable
@@ -162,40 +159,39 @@ namespace ruru
     {
     }
 
-
-     void RecordTable::SetFieldValue (  const std::string& field_name, int64_t value)
-     {
-       int i = table->getColumnIndex(field_name);
-        if (i != -1)
-        {
-            record->fields_[i].SetValue(value);
-        }
-     } 
-
-    void RecordTable::SetFieldValue (  const std::string& field_name, double value)
-    {
-       int i = table->getColumnIndex(field_name);
-        if (i != -1)
-        {
-            record->fields_[i].SetValue(value);
-        }
-    }        
-    void RecordTable::SetFieldValue (  const std::string& field_name, const std::string& value) 
+    void RecordTable::SetFieldValue(const std::string &field_name, int64_t value)
     {
         int i = table->getColumnIndex(field_name);
         if (i != -1)
         {
             record->fields_[i].SetValue(value);
         }
-    } 
-    
-    void RecordTable::SetFieldValue (  const std::string& field_name, const std::shared_ptr<char>& value)
+    }
+
+    void RecordTable::SetFieldValue(const std::string &field_name, double value)
     {
-       /* int i = table->getColumnIndex(field_name);
+        int i = table->getColumnIndex(field_name);
         if (i != -1)
         {
             record->fields_[i].SetValue(value);
-        }*/
+        }
+    }
+    void RecordTable::SetFieldValue(const std::string &field_name, const std::string &value)
+    {
+        int i = table->getColumnIndex(field_name);
+        if (i != -1)
+        {
+            record->fields_[i].SetValue(value);
+        }
+    }
+
+    void RecordTable::SetFieldValue(const std::string &field_name, const std::shared_ptr<char> &value)
+    {
+        /* int i = table->getColumnIndex(field_name);
+         if (i != -1)
+         {
+             record->fields_[i].SetValue(value);
+         }*/
     }
 
     bool RecordTable::GetFieldValue(const std::string &field_name, int64_t &value)
@@ -271,7 +267,7 @@ namespace ruru
 
     bool RecordTable::Save()
     {
-        StorageEngine* store = table->getDatabase()->getStorageEngine(table->getName());
-        return store->Save(*record , type == RecordType::eNew  );
+        StorageEngine *store = table->getDatabase()->getStorageEngine(table->getName());
+        return store->Save(*record, type == RecordType::eNew);
     }
 }

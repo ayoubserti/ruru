@@ -11,7 +11,8 @@ namespace ruru
         DataTypes type_;
         std::shared_ptr<char> value_;
         std::size_t GetHash() const;
-        template <typename T> void SetValue( const T& value);
+        template <typename T>
+        void SetValue(const T &value);
         void Reset();
         ~Field();
         const RecordLength_t GetSize() const;
@@ -23,12 +24,10 @@ namespace ruru
         std::vector<Field> fields_;
         const std::string GetKey() const;
 
-        Record(): row_id_(-1) {};
+        Record() : row_id_(-1){};
         Record(std::initializer_list<Field> init)
-        :row_id_(-1)
-        ,fields_{init}{}
-        const RecordLength_t  GetRowSize() const;
-        
+            : row_id_(-1), fields_{init} {}
+        const RecordLength_t GetRowSize() const;
     };
 
     class RecordFile

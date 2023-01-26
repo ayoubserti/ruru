@@ -6,7 +6,6 @@
 #ifndef _H_TABLE__H_
 #define _H_TABLE__H_
 
-
 namespace ruru
 {
 
@@ -77,20 +76,20 @@ namespace ruru
 
     class Table
     {
-        Database* database;
+        Database *database;
         std::string name;
         std::vector<Column> columns;
         std::unordered_map<std::string, int> columns_name_to_index;
         std::map<std::pair<std::string, std::string>, int> indices;
-        
-        //friend class
-        //friend class ResultSet;
 
-        //private member function
-        RecordTable* _CreateRecordTableFromRec(  Record* rec);
+        // friend class
+        // friend class ResultSet;
+
+        // private member function
+        RecordTable *_CreateRecordTableFromRec(Record *rec);
 
     public:
-        Table(std::string name, Database* db);
+        Table(std::string name, Database *db);
 
         // Adding a new column to table
         void addColumn(const Column &col);
@@ -116,65 +115,60 @@ namespace ruru
         // Removing index by name
         void removeIndex(const std::string &index_name);
 
-        //create a Record from table
-        RecordTable* CreateRecord();
+        // create a Record from table
+        RecordTable *CreateRecord();
 
-        const std::vector<Column>& getColumns() const {
+        const std::vector<Column> &getColumns() const
+        {
             return columns;
         }
 
-        Database* getDatabase() { return database;}
+        Database *getDatabase() { return database; }
 
         // Lookup a result set by filter
         // for instance, get all records for which 'age' > 34
-        ResultSet* Search(const std::vector<std::shared_ptr<Filter> >& filters);
+        ResultSet *Search(const std::vector<std::shared_ptr<Filter>> &filters);
 
-
-        //get record from storage
-        RecordTable*  GetRecord( RecordId id);
-
-
+        // get record from storage
+        RecordTable *GetRecord(RecordId id);
     };
 
     // RecordTable represent a record inside the table
-    // it encapsulates the Record 
+    // it encapsulates the Record
     class RecordTable
     {
-        Table*  table;
-        Record* record;
+        Table *table;
+        Record *record;
         RecordType type;
-        RecordTable ( Table* tbl , Record* rec);
+        RecordTable(Table *tbl, Record *rec);
         friend class Table;
-        
-        public:
-        
+
+    public:
         RecordTable() = delete;
 
-        void SetFieldValue (  const std::string& field_name, int64_t value); 
+        void SetFieldValue(const std::string &field_name, int64_t value);
 
-        void SetFieldValue (  const std::string& field_name, double value); 
-        
-        void SetFieldValue (  const std::string& field_name, const std::string& value); 
-        
-        void SetFieldValue (  const std::string& field_name, const std::shared_ptr<char>& value); 
+        void SetFieldValue(const std::string &field_name, double value);
 
-        bool 
-        GetFieldValue( const std::string& field_name, int64_t& value);
+        void SetFieldValue(const std::string &field_name, const std::string &value);
+
+        void SetFieldValue(const std::string &field_name, const std::shared_ptr<char> &value);
 
         bool
-        GetFieldValue( const std::string& field_name, double& value);
+        GetFieldValue(const std::string &field_name, int64_t &value);
 
         bool
-        GetFieldValue( const std::string& field_name, std::string& value);
+        GetFieldValue(const std::string &field_name, double &value);
 
-        // binary 
         bool
-        GetFieldValue( const std::string& field_name, std::shared_ptr<char>& value);
+        GetFieldValue(const std::string &field_name, std::string &value);
 
+        // binary
+        bool
+        GetFieldValue(const std::string &field_name, std::shared_ptr<char> &value);
 
-        //Save Record
-        bool    Save();
-
+        // Save Record
+        bool Save();
     };
 
 }

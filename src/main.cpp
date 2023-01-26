@@ -178,6 +178,5 @@ int main()
     saveSchema(db.get(), "test/db1/db1.json");
     db->getStorageEngine("Employee")->Flush();
 
-
     return 0;
 }

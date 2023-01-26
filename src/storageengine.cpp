@@ -22,13 +22,13 @@ bool _ApplyFilter(const Record &rec, const Filter &filter)
     {
     case DataTypes::eInteger:
     {
-        int64_t value = *reinterpret_cast<int64_t*>(fl.value_.get());
+        int64_t value = *reinterpret_cast<int64_t *>(fl.value_.get());
         return filter.Apply(value);
     }
     break;
     case DataTypes::eDouble:
     {
-        double value = *reinterpret_cast<double*>(fl.value_.get());
+        double value = *reinterpret_cast<double *>(fl.value_.get());
         return filter.Apply(value);
     }
 
@@ -37,7 +37,7 @@ bool _ApplyFilter(const Record &rec, const Filter &filter)
     {
         UnionValues v;
         v.txt = fl.value_.get();
-        std::string value = v.txt+sizeof(int64_t);
+        std::string value = v.txt + sizeof(int64_t);
         return filter.Apply(value);
     }
 
@@ -150,7 +150,7 @@ std::vector<RecordId> StorageEngine::Lookup(const Filters_t &filters)
                     break;
                 }
             }
-            if ( ok )
+            if (ok)
                 rowsid.push_back(it.first);
         }
     }
@@ -158,14 +158,13 @@ std::vector<RecordId> StorageEngine::Lookup(const Filters_t &filters)
     return rowsid;
 }
 
-
-
-Record*          StorageEngine::LoadRecord( RecordId id)
+Record *StorageEngine::LoadRecord(RecordId id)
 {
-    if ( !row_id_index_.Exists(id)) return nullptr;
+    if (!row_id_index_.Exists(id))
+        return nullptr;
     auto entry = row_id_index_.Lookup(id);
-    Record* rec = new Record();
-    _LoadRecord(entry.second, *rec );
+    Record *rec = new Record();
+    _LoadRecord(entry.second, *rec);
     return rec;
 }
 

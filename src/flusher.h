@@ -1,5 +1,5 @@
 // Copyright (c) 2023 Ayoub Serti
-// 
+//
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
@@ -9,14 +9,9 @@
 namespace ruru
 {
 
-    class Flusher 
+    class Flusher
     {
-        
     };
 }
 
 #endif //_H_FLUSHER_HH__
-
-
-
-

@@ -35,28 +35,27 @@ namespace ruru
     // Look up a record by key
     std::vector<Record> Lookup(const std::string &key);
 
-    //Look up records by filter
-    std::vector<RecordId> Lookup(const Filters_t& filters);
+    // Look up records by filter
+    std::vector<RecordId> Lookup(const Filters_t &filters);
 
     // LoadRecord
-    Record*          LoadRecord( RecordId id);
+    Record *LoadRecord(RecordId id);
 
     // Save a record and set a record id
-    bool Save( Record &record, bool isNew);
+    bool Save(Record &record, bool isNew);
 
-    // Flush 
+    // Flush
     bool Flush();
 
   private:
-    
     std::string file_name_;
-    RecordId    current_rec_id_;
+    RecordId current_rec_id_;
     BTreeIndex<std::string, int> index_;
 
-    // row_id_index_ is a hidden index 
+    // row_id_index_ is a hidden index
     // it allows quick retrieval and detection of deletion
     // if the record is deleted --> RecordLength_t = 0
-    BTreeIndex<RecordId , std::pair<RecordLength_t,RecordPosition_t> > row_id_index_; 
+    BTreeIndex<RecordId, std::pair<RecordLength_t, RecordPosition_t>> row_id_index_;
 
     // Load the index from the index file
     void LoadIndex();
@@ -64,12 +63,11 @@ namespace ruru
     // Save the index to the index file
     void SaveIndex();
 
-    //Load hidden index
+    // Load hidden index
     void LoadHiddenIndex();
 
-
-    //Load record by position
-   RecordLength_t  _LoadRecord(RecordPosition_t position ,  Record& rec);
+    // Load record by position
+    RecordLength_t _LoadRecord(RecordPosition_t position, Record &rec);
   };
 
 }
