@@ -6,8 +6,18 @@
 -->
 
 # build
+```
 mkdir build
 cd build 
 conan install ..
 cmake ..
 make 
+```
+
+# requirement
+
+```
+conan
+cmake 
+c++17
+```
