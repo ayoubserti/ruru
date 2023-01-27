@@ -58,16 +58,12 @@ std::unique_ptr<Database> openDatabase(std::filesystem::path path)
 
 std::unique_ptr<Database> newDatabase(std::filesystem::path path, const std::string &json_str)
 {
-    // if ( !std::filesystem::is_regular_file(path))
-    //    return nullptr;
-
     std::unique_ptr<Database> ptr(Database::newDatabase(path.filename()));
 
     nlohmann::json json = nlohmann::json::parse(json_str);
     Table *tbl = new Table(json[0]["table_name"], ptr.get());
     for (auto &&it : json[0]["columns"])
     {
-        // Column cl(it["column_name"],it["column_type"] = "INTEGER" ? DataTypes::eInteger : DataTypes::eVarChar);
         Column cl(it["column_name"], getTypeFromString(it["column_type"]));
         tbl->addColumn(cl);
     }
@@ -75,8 +71,9 @@ std::unique_ptr<Database> newDatabase(std::filesystem::path path, const std::str
     std::string tname = json[0]["table_name"];
     auto parent = path.parent_path();
 
-    StorageEngine *store = new StorageEngine(parent.append(tname + ".ru"));
+    StorageEngine *store = new StorageEngine(parent.append(tname + db_extension));
     ptr->addTable(tbl, store);
+    ptr->saveSchema(path);
     return ptr;
 }
 
@@ -135,7 +132,7 @@ int main()
             }
         ]
     )";
-
+#if 0
     std::unique_ptr<Database> db = newDatabase("test/db1/db1.ru", structure);
     Table *tbl = db->getTable("Employee");
     for (int i = 0; i < 10; i++)
@@ -177,6 +174,11 @@ int main()
 
     saveSchema(db.get(), "test/db1/db1.json");
     db->getStorageEngine("Employee")->Flush();
-
+#else
+    
+    auto db = Database::openDatabase("test/db1/db1.ru");
+    Table* tbl = db->getTable("Employee");
+    auto r = tbl->Search({});
+#endif     
     return 0;
 }

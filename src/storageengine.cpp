@@ -49,13 +49,16 @@ bool _ApplyFilter(const Record &rec, const Filter &filter)
 }
 
 // Constructor
-StorageEngine::StorageEngine(const std::string &file_name)
-    : file_name_(file_name), current_rec_id_(-1)
+StorageEngine::StorageEngine(const std::string &file_name, bool forSchema)
+    : file_name_(file_name), current_rec_id_(-1), is_for_schema_(forSchema)
 {
-    // Load the index from the index file
-    LoadIndex();
-    // Load row_id index
-    LoadHiddenIndex();
+    if (!is_for_schema_)
+    {
+        // Load the index from the index file
+        LoadIndex();
+        // Load row_id index
+        LoadHiddenIndex();
+    }
 }
 
 // Insert a record into the table
@@ -64,12 +67,15 @@ void StorageEngine::Insert(const Record &record)
     // Open the file in append mode
     std::fstream file(file_name_, std::ios::app);
 
-    // Update the index
-    index_.Insert(record.GetKey(), file.tellp());
+    if ( !is_for_schema_)
+    {
+        // Update the index
+        index_.Insert(record.GetKey(), file.tellp());
 
-    // update hidden index
-    row_id_index_.Insert(record.row_id_, std::make_pair<RecordLength_t, RecordPosition_t>(record.GetRowSize(), file.tellp()));
-
+        // update hidden index
+        row_id_index_.Insert(record.row_id_, std::make_pair<RecordLength_t, RecordPosition_t>(record.GetRowSize(), file.tellp()));
+    }
+    
     RecordFile record_file(file);
     record_file.Write(record);
 
@@ -107,6 +113,7 @@ std::vector<Record> StorageEngine::SelectAll()
 // Look up a record by key
 std::vector<Record> StorageEngine::Lookup(const std::string &key)
 {
+    if ( is_for_schema_) return {};
     // Use the index to find the offset of the record in the file
     int offset = index_.Lookup(key);
 
@@ -133,6 +140,7 @@ std::vector<RecordId> StorageEngine::Lookup(const Filters_t &filters)
 {
 
     std::vector<RecordId> rowsid;
+    
     // table full scan
     auto entries = row_id_index_.GetEntries();
     for (auto &it : entries)
@@ -160,12 +168,33 @@ std::vector<RecordId> StorageEngine::Lookup(const Filters_t &filters)
 
 Record *StorageEngine::LoadRecord(RecordId id)
 {
-    if (!row_id_index_.Exists(id))
+    if (!is_for_schema_)
+    {
+        if (!row_id_index_.Exists(id))
+            return nullptr;
+        auto entry = row_id_index_.Lookup(id);
+        Record *rec = new Record();
+        _LoadRecord(entry.second, *rec);
+        return rec;
+    }
+    else
+    {
+        // schema file is small, quick scan
+        std::fstream file(file_name_);
+        if (!file.is_open())
+            return nullptr;
+        Record *rec = new Record();
+        while (!file.eof())
+        {
+            RecordFile recfile(file);
+            RecordId zid = -1;
+            if (recfile.Read(zid, rec) && rec->row_id_ == id)
+                return rec;
+        }
+        delete rec;
+
         return nullptr;
-    auto entry = row_id_index_.Lookup(id);
-    Record *rec = new Record();
-    _LoadRecord(entry.second, *rec);
-    return rec;
+    }
 }
 
 // Load the index from the index file

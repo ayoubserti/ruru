@@ -11,11 +11,17 @@ namespace ruru
         std::string name;
         std::map<std::string, Table *> tables;
         std::map<std::string, StorageEngine *> storageEngines;
+        std::unique_ptr<Database>       schema; //{nullptr};
 
         Database(const std::string &name);
+
+        void _initSchemaDB();
     public:
         
         static Database* newDatabase(const std::string &name);
+        
+        //openDatabase from path
+        static Database* openDatabase(const std::filesystem::path& path);
 
         // Adding a new table to the database
         void addTable(Table *table, StorageEngine *storageEngine);
@@ -32,6 +38,10 @@ namespace ruru
         // Getting the storage engine for a table
         StorageEngine *getStorageEngine(const std::string &tableName);
 
+        //Save Database schema
+        bool   saveSchema(const std::filesystem::path& path);
+
+        ~Database();
         
     };
 

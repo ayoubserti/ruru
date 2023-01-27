@@ -1,13 +1,11 @@
 #ifndef _H_RECORD__HH_
 #define _H_RECORD__HH_
-#include "ruru.h"
 
 namespace ruru
 {
     struct Field
     {
         Field();
-        std::string name_;
         DataTypes type_;
         std::shared_ptr<char> value_;
         std::size_t GetHash() const;

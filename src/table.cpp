@@ -111,7 +111,6 @@ namespace ruru
         {
             Field fl;
             fl.Reset();
-            fl.name_ = it.getName();
             fl.type_ = it.getType();
             rec->fields_.push_back(fl);
         }
@@ -269,5 +268,11 @@ namespace ruru
     {
         StorageEngine *store = table->getDatabase()->getStorageEngine(table->getName());
         return store->Save(*record, type == RecordType::eNew);
+    }
+
+
+    RecordTable::~RecordTable()
+    {
+        delete record;
     }
 }

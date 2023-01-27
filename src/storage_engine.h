@@ -24,7 +24,7 @@ namespace ruru
   {
   public:
     // Constructor
-    StorageEngine(const std::string &file_name);
+    StorageEngine(const std::string &file_name , bool forSchema = false);
 
     // Insert a record into the table
     void Insert(const Record &record);
@@ -48,6 +48,7 @@ namespace ruru
     bool Flush();
 
   private:
+    bool        is_for_schema_;
     std::string file_name_;
     RecordId current_rec_id_;
     BTreeIndex<std::string, int> index_;

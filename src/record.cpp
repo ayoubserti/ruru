@@ -99,7 +99,7 @@ namespace ruru
     // Field
 
     Field::Field()
-        : name_(""), type_(DataTypes::eUnknown), value_(nullptr)
+        :  type_(DataTypes::eUnknown), value_(nullptr)
     {
     }
 

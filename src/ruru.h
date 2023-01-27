@@ -26,6 +26,8 @@ namespace ruru
         double floating;
         char *txt;
     };
+
+    static const char* db_extension = ".ru";
 }
 
 #endif //__H_RURU_HH__

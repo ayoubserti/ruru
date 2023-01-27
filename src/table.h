@@ -14,6 +14,11 @@ namespace ruru
     class Database;
     class ResultSet;
     class Filter;
+    class Table;
+    class RecordTable;
+
+    using TablePtr = std::shared_ptr<Table>;
+    using RecordTablePtr = std::shared_ptr<RecordTable>;
 
     enum class RecordType
     {
@@ -83,13 +88,14 @@ namespace ruru
         std::map<std::pair<std::string, std::string>, int> indices;
 
         // friend class
-        // friend class ResultSet;
+        friend class Database;
 
         // private member function
         RecordTable *_CreateRecordTableFromRec(Record *rec);
 
+        
     public:
-        Table(std::string name, Database *db);
+    Table(std::string name, Database *db);
 
         // Adding a new column to table
         void addColumn(const Column &col);
@@ -131,6 +137,8 @@ namespace ruru
 
         // get record from storage
         RecordTable *GetRecord(RecordId id);
+
+       
     };
 
     // RecordTable represent a record inside the table
@@ -169,6 +177,9 @@ namespace ruru
 
         // Save Record
         bool Save();
+
+        //dtor
+        virtual ~RecordTable();
     };
 
 }
