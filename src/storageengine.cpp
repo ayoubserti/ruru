@@ -10,6 +10,7 @@
 #include "record.h"
 
 using namespace ruru;
+using namespace ruru::internal; 
 
 // tools
 bool _ApplyFilter(const Record &rec, const Filter &filter)
@@ -49,7 +50,7 @@ bool _ApplyFilter(const Record &rec, const Filter &filter)
 }
 
 // Constructor
-StorageEngine::StorageEngine(const std::string &file_name, bool forSchema)
+BasicStorageEngine::BasicStorageEngine(const std::string &file_name, bool forSchema)
     : file_name_(file_name), current_rec_id_(-1), is_for_schema_(forSchema)
 {
     if (!is_for_schema_)
@@ -62,7 +63,7 @@ StorageEngine::StorageEngine(const std::string &file_name, bool forSchema)
 }
 
 // Insert a record into the table
-void StorageEngine::Insert(const Record &record)
+void BasicStorageEngine::Insert(const Record &record)
 {
     // Open the file in append mode
     std::fstream file(file_name_, std::ios::app);
@@ -84,7 +85,7 @@ void StorageEngine::Insert(const Record &record)
 }
 
 // Select all records from the table
-std::vector<Record> StorageEngine::SelectAll()
+std::vector<Record> BasicStorageEngine::SelectAll()
 {
     // Open the file in read mode
     std::fstream file(file_name_);
@@ -111,7 +112,7 @@ std::vector<Record> StorageEngine::SelectAll()
 }
 
 // Look up a record by key
-std::vector<Record> StorageEngine::Lookup(const std::string &key)
+std::vector<Record> BasicStorageEngine::Lookup(const std::string &key)
 {
     if ( is_for_schema_) return {};
     // Use the index to find the offset of the record in the file
@@ -136,7 +137,7 @@ std::vector<Record> StorageEngine::Lookup(const std::string &key)
     return values;
 }
 
-std::vector<RecordId> StorageEngine::Lookup(const Filters_t &filters)
+std::vector<RecordId> BasicStorageEngine::Lookup(const Filters_t &filters)
 {
 
     std::vector<RecordId> rowsid;
@@ -166,7 +167,7 @@ std::vector<RecordId> StorageEngine::Lookup(const Filters_t &filters)
     return rowsid;
 }
 
-Record *StorageEngine::LoadRecord(RecordId id)
+Record *BasicStorageEngine::LoadRecord(RecordId id)
 {
     if (!is_for_schema_)
     {
@@ -198,7 +199,7 @@ Record *StorageEngine::LoadRecord(RecordId id)
 }
 
 // Load the index from the index file
-void StorageEngine::LoadIndex()
+void BasicStorageEngine::LoadIndex()
 {
     // Open the index file in read mode
     std::ifstream index_file(file_name_ + ".index");
@@ -214,7 +215,7 @@ void StorageEngine::LoadIndex()
     index_file.close();
 }
 // Load the index from the index file
-void StorageEngine::LoadHiddenIndex()
+void BasicStorageEngine::LoadHiddenIndex()
 {
     // Open the index file in read mode
     std::ifstream index_file(file_name_ + ".row.index"); // keylenghpos
@@ -237,7 +238,7 @@ void StorageEngine::LoadHiddenIndex()
 }
 
 // Save the index to the index file
-void StorageEngine::SaveIndex()
+void BasicStorageEngine::SaveIndex()
 {
     // Open the index file in write mode
     {
@@ -273,7 +274,7 @@ void StorageEngine::SaveIndex()
 }
 
 // Save the record into storage
-bool StorageEngine::Save(Record &record, bool isNew)
+bool BasicStorageEngine::Save(Record &record, bool isNew)
 {
     if (isNew)
     {
@@ -317,14 +318,14 @@ bool StorageEngine::Save(Record &record, bool isNew)
     return false;
 }
 
-bool StorageEngine::Flush()
+bool BasicStorageEngine::Flush()
 {
     if ( !is_for_schema_)
         SaveIndex();
     return true;
 }
 
-RecordLength_t StorageEngine::_LoadRecord(RecordPosition_t position, Record &rec)
+RecordLength_t BasicStorageEngine::_LoadRecord(RecordPosition_t position, Record &rec)
 {
     RecordLength_t len = 0;
     std::fstream file(file_name_);

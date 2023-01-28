@@ -45,6 +45,7 @@ namespace ruru
 
         return "";
     }
+    using internal::BasicStorageEngine;
 
 #pragma region
     
@@ -67,7 +68,7 @@ namespace ruru
         schemaTable->addColumn(object_kind);
         schemaTable->addColumn(object_type);
         schemaTable->addColumn(object_parent);
-        StorageEngine *schemaStore = new StorageEngine(path.c_str(), true);
+        StorageEngine *schemaStore = new BasicStorageEngine(path, true);
         schema->tables[__schema] = schemaTable;
         schema->storageEngines[__schema] = schemaStore;
         
@@ -88,7 +89,7 @@ namespace ruru
         - structure is stored into a table file (<db_name>.ru)
         - each table have it's data file (<table_name>.ru)
         */
-        Database *db = new Database(path.filename());
+        Database *db = new Database(path);
         db->_initSchemaDB();
         StorageEngine *schemaStore = db->schema->getStorageEngine(__schema);
         Table *schemaTable = db->schema->getTable(__schema);
@@ -134,7 +135,7 @@ namespace ruru
         tables[table_name] = tbl;
         auto parent = path.parent_path();
         
-        StorageEngine* store = new StorageEngine(parent.append(table_name + db_extension));
+        StorageEngine* store = new BasicStorageEngine(parent.append(table_name + db_extension));
         storageEngines[table_name] = store;
         return tbl;
         
