@@ -9,22 +9,23 @@ namespace ruru
     class Database
     {
         std::string name;
+        std::filesystem::path path;
         std::map<std::string, Table *> tables;
         std::map<std::string, StorageEngine *> storageEngines;
         std::unique_ptr<Database>       schema; //{nullptr};
 
-        Database(const std::string &name);
+        Database(const std::filesystem::path &path);
 
         void _initSchemaDB();
     public:
         
-        static Database* newDatabase(const std::string &name);
+        static Database* newDatabase(const std::filesystem::path &path);
         
         //openDatabase from path
         static Database* openDatabase(const std::filesystem::path& path);
 
         // Adding a new table to the database
-        void addTable(Table *table, StorageEngine *storageEngine);
+        Table* newTable(const std::string& table_name);
 
         // Getting a table by name
         Table *getTable(const std::string &tableName);

@@ -9,6 +9,8 @@
 #include "resultset.h"
 namespace ruru
 {
+    //constants
+    constexpr const char* __schema = "__schema";
     // private functions
     struct TypeMapping
     {
@@ -44,14 +46,19 @@ namespace ruru
         return "";
     }
 
-    Database::Database(const std::string &name) : name(name), schema(nullptr) {}
+#pragma region
+    
+    Database::Database(const std::filesystem::path &path) 
+    :name(path.filename())
+    ,path(path)
+    ,schema(nullptr) {}
 
     void Database::_initSchemaDB()
     {
         assert(schema == nullptr);
         schema.reset(new Database(name));
 
-        Table *schemaTable = new Table("__schema", schema.get());
+        Table *schemaTable = new Table(__schema, schema.get());
         Column object_name("object_name", DataTypes::eVarChar);     // name
         Column object_kind("object_kind", DataTypes::eVarChar);     // table, column, index
         Column object_type("object_type", DataTypes::eVarChar);     // data type
@@ -60,13 +67,15 @@ namespace ruru
         schemaTable->addColumn(object_kind);
         schemaTable->addColumn(object_type);
         schemaTable->addColumn(object_parent);
-        StorageEngine *schemaStore = new StorageEngine(name, true);
-        schema->addTable(schemaTable, schemaStore);
+        StorageEngine *schemaStore = new StorageEngine(path.c_str(), true);
+        schema->tables[__schema] = schemaTable;
+        schema->storageEngines[__schema] = schemaStore;
+        
     }
 
-    Database *Database::newDatabase(const std::string &name)
+    Database *Database::newDatabase(const std::filesystem::path &path)
     {
-        Database *db = new Database(name);
+        Database *db = new Database(path);
         db->_initSchemaDB();
         return db;
     }
@@ -76,23 +85,19 @@ namespace ruru
         /*
         database folder structure:
         - folder name = database name
-        - structure is stored into a table file (schema.ru)
-        - schema.ru stores tables as follow:
-
-        - each table structure is a record
-        - json dump inside (schema.json)
+        - structure is stored into a table file (<db_name>.ru)
         - each table have it's data file (<table_name>.ru)
         */
         Database *db = new Database(path.filename());
         db->_initSchemaDB();
-        StorageEngine *schemaStore = db->schema->getStorageEngine("__schema");
-        Table *schemaTable = db->schema->getTable("__schema");
+        StorageEngine *schemaStore = db->schema->getStorageEngine(__schema);
+        Table *schemaTable = db->schema->getTable(__schema);
         std::vector<Record> all_tables_structrue = schemaStore->SelectAll();
 
         for (auto it = all_tables_structrue.begin(); it != all_tables_structrue.end(); ++it)
         {
-            // for simplicity purpose, we consider that schema was stored in the store file in sequence, in the correct order
-            //  the implementation of relations will remove this caveat
+            // for simplicity purpose, we consider record of table objects are stored before column objects
+            // The forthcoming implementation of "ORDER BY" will eliminate this limitation. 
             assert(it->fields_.size() % 4 == 0); // debugging
             RecordTable *rec = schemaTable->GetRecord(it->row_id_);
             std::string xname;
@@ -105,9 +110,7 @@ namespace ruru
             rec->GetFieldValue("object_parent", xparent);
             if (xkind == "TABLE")
             {
-                Table *tbl = new Table(xname, db);
-                StorageEngine *store = new StorageEngine(xname + db_extension);
-                db->addTable(tbl, store);
+                db->newTable(xname);
             }
             else if (xkind == "COLUMN")
             {
@@ -123,10 +126,18 @@ namespace ruru
         return db;
     }
 
-    void Database::addTable(Table *table, StorageEngine *storageEngine)
+    Table* Database::newTable(const std::string& table_name)
     {
-        tables[table->getName()] = table;
-        storageEngines[table->getName()] = storageEngine;
+        if ( tables.find(table_name) != tables.end())
+            return tables[table_name];
+        Table* tbl = new Table(table_name, this);
+        tables[table_name] = tbl;
+        auto parent = path.parent_path();
+        
+        StorageEngine* store = new StorageEngine(parent.append(table_name + db_extension));
+        storageEngines[table_name] = store;
+        return tbl;
+        
     }
 
     Table *Database::getTable(const std::string &tableName)
@@ -166,7 +177,8 @@ namespace ruru
     bool Database::saveSchema(const std::filesystem::path &path)
     {
         bool result = true;
-        auto tbl_schema = schema->getTable("__schema");
+        auto tbl_schema = schema->getTable(__schema);
+        assert(tbl_schema != nullptr);
         for (auto &&tbl : tables)
         {
             auto rec = tbl_schema->CreateRecord();
@@ -193,7 +205,11 @@ namespace ruru
     }
 
     Database::~Database()
-    {
+    {   
+        //before leaving must flush all data
+        for (auto &&it : storageEngines)
+             it.second->Flush();
+
         for (auto &&it : tables)
             delete it.second;
         for (auto &&it : storageEngines)

@@ -58,21 +58,17 @@ std::unique_ptr<Database> openDatabase(std::filesystem::path path)
 
 std::unique_ptr<Database> newDatabase(std::filesystem::path path, const std::string &json_str)
 {
-    std::unique_ptr<Database> ptr(Database::newDatabase(path.filename()));
+    std::unique_ptr<Database> ptr(Database::newDatabase(path));
 
     nlohmann::json json = nlohmann::json::parse(json_str);
-    Table *tbl = new Table(json[0]["table_name"], ptr.get());
+   
+    Table *tbl =  ptr->newTable(json[0]["table_name"]);
     for (auto &&it : json[0]["columns"])
     {
         Column cl(it["column_name"], getTypeFromString(it["column_type"]));
         tbl->addColumn(cl);
     }
-
-    std::string tname = json[0]["table_name"];
-    auto parent = path.parent_path();
-
-    StorageEngine *store = new StorageEngine(parent.append(tname + db_extension));
-    ptr->addTable(tbl, store);
+    
     ptr->saveSchema(path);
     return ptr;
 }
@@ -173,7 +169,6 @@ int main()
     }
 
     saveSchema(db.get(), "test/db1/db1.json");
-    db->getStorageEngine("Employee")->Flush();
 #else
     
     auto db = Database::openDatabase("test/db1/db1.ru");

@@ -319,7 +319,8 @@ bool StorageEngine::Save(Record &record, bool isNew)
 
 bool StorageEngine::Flush()
 {
-    SaveIndex();
+    if ( !is_for_schema_)
+        SaveIndex();
     return true;
 }
 

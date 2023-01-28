@@ -93,10 +93,10 @@ namespace ruru
         // private member function
         RecordTable *_CreateRecordTableFromRec(Record *rec);
 
+        Table(std::string name, Database *db);
         
     public:
-    Table(std::string name, Database *db);
-
+    
         // Adding a new column to table
         void addColumn(const Column &col);
 
