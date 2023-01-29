@@ -1,8 +1,5 @@
 #include "pch.h"
 #include "ruru.h"
-#include "database.h"
-#include "table.h"
-#include "resultset.h"
 
 #include <iostream>
 #include <filesystem>
@@ -44,23 +41,24 @@ std::string getStringFromType(DataTypes type)
     return "";
 }
 
-std::unique_ptr<Database> openDatabase(std::filesystem::path path)
+auto openDatabase(std::filesystem::path path)
 {
-
+    std::shared_ptr<IDatabase>  ptr(nullptr);   
     if (!std::filesystem::is_regular_file(path))
-        return nullptr;
-    std::unique_ptr<Database> ptr(Database::newDatabase(path.filename()));
+        return ptr;
+    
+    ptr.reset(IDatabase::newDatabase(path.filename()));
 
     return ptr;
 }
 
-std::unique_ptr<Database> newDatabase(std::filesystem::path path, const std::string &json_str)
+auto newDatabase(std::filesystem::path path, const std::string &json_str)
 {
-    std::unique_ptr<Database> ptr(Database::newDatabase(path));
+    std::shared_ptr<IDatabase> ptr(IDatabase::newDatabase(path));
 
     nlohmann::json json = nlohmann::json::parse(json_str);
    
-    Table *tbl =  ptr->newTable(json[0]["table_name"]);
+    TablePtr tbl =  ptr->newTable(json[0]["table_name"]);
     for (auto &&it : json[0]["columns"])
     {
         Column cl(it["column_name"], getTypeFromString(it["column_type"]));
@@ -72,7 +70,7 @@ std::unique_ptr<Database> newDatabase(std::filesystem::path path, const std::str
 }
 
 // save dabase schema into a file
-void saveSchema(Database *db, std::filesystem::path path)
+void saveSchema(IDatabase *db, std::filesystem::path path)
 {
     auto tbls = db->getAllTables();
 
@@ -126,12 +124,12 @@ int main()
             }
         ]
     )";
-#if 0
-    std::unique_ptr<Database> db = newDatabase("test/db1/db1.ru", structure);
-    Table *tbl = db->getTable("Employee");
+#if 1
+    std::shared_ptr<IDatabase> db = newDatabase("test/db1/db1.ru", structure);
+    TablePtr tbl = db->getTable("Employee");
     for (int i = 0; i < 10; i++)
     {
-        RecordTable *rec = tbl->CreateRecord();
+        RecordTablePtr rec = tbl->CreateRecord();
         int64_t id = 10 + i;
         rec->SetFieldValue("ID", id);
         int64_t age = 34 + i;
@@ -140,17 +138,17 @@ int main()
         n.append(i, 'A');
         rec->SetFieldValue("NAME", n);
         rec->Save();
+        
     }
     Filters_t filters;
-    Column col1 = tbl->getColumn("ID");
-    std::shared_ptr<Filter> filter1(new Filter(tbl, &col1, OperatorType::eLesser, 15, 0));
+    std::shared_ptr<Filter> filter1(new Filter(tbl->getColumnIndex("ID"), OperatorType::eLesser, 15, 0));
     filters.push_back(filter1);
 
     Column col2 = tbl->getColumn("AGE");
-    std::shared_ptr<Filter> filter2(new Filter(tbl, &col2, OperatorType::eGreaterOrEq, 37, 0));
+    std::shared_ptr<Filter> filter2(new Filter( tbl->getColumnIndex("AGE"), OperatorType::eGreaterOrEq, 37, 0));
     filters.push_back(filter2);
 
-    ResultSet *res = tbl->Search(filters);
+    ResultSetPtr res = tbl->Search(filters);
 
     auto r = res->First();
     std::string nn;
@@ -169,8 +167,8 @@ int main()
     saveSchema(db.get(), "test/db1/db1.json");
 #else
     
-    auto db = Database::openDatabase("test/db1/db1.ru");
-    Table* tbl = db->getTable("Employee");
+    auto db = IDatabase::openDatabase("test/db1/db1.ru");
+    TablePtr tbl = db->getTable("Employee");
     auto r = tbl->Search({});
 #endif     
     return 0;

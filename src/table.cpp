@@ -5,11 +5,8 @@
 
 #include "pch.h"
 #include "ruru.h"
-#include "table.h"
 #include "record.h"
 #include "database.h"
-#include "storage_engine.h"
-#include "resultset.h"
 
 namespace ruru
 {
@@ -43,7 +40,7 @@ namespace ruru
         return !isNullable;
     }
 
-    Table::Table(std::string name, Database *db) : name(std::move(name)), database(db) {}
+    Table::Table(std::string name, DatabasePtr db) : name(std::move(name)), database(db) {}
 
     void Table::addColumn(const Column &col)
     {
@@ -103,7 +100,7 @@ namespace ruru
         indices.erase(std::make_pair(index_name, index_name));
     }
 
-    RecordTable *Table::CreateRecord()
+    RecordTablePtr Table::CreateRecord()
     {
         Record *rec = new Record();
         // prepare fields
@@ -114,39 +111,45 @@ namespace ruru
             fl.type_ = it.getType();
             rec->fields_.push_back(fl);
         }
-        RecordTable *rectbl = new RecordTable(this, rec);
+        RecordTablePtr rectbl( new RecordTable(this, rec));
         rectbl->type = RecordType::eNew;
         return rectbl;
     }
 
-    RecordTable *Table::_CreateRecordTableFromRec(Record *rec)
+    RecordTablePtr Table::_CreateRecordTableFromRec(Record *rec)
     {
-        RecordTable *rectbl = new RecordTable(this, rec);
+        RecordTablePtr rectbl( new RecordTable(this, rec) ) ;
         rectbl->type = RecordType::eModifyed;
         return rectbl;
     }
 
-    ResultSet *Table::Search(const Filters_t &filters)
+    ResultSetPtr Table::Search(const Filters_t &filters)
     {
-        ResultSet *result = new ResultSet(filters);
+        Database* db = reinterpret_cast<Database*>(database.get());
+        assert(db != nullptr);
+
+        ResultSetPtr result( new ResultSet(filters));
         result->table_ = this;
 
         // apply the search in the StorageEngine and retrieve list of record Id
-        StorageEngine *store = database->getStorageEngine(getName());
+        IStorageEngine *store = db->getStorageEngine(getName());
         auto rows = store->Lookup(filters);
         result->records_id_ = rows;
         return result;
     }
 
-    RecordTable *Table::GetRecord(RecordId id)
+    RecordTablePtr Table::GetRecord(RecordId id)
     {
         // id is internal ID ( rowid)
-        RecordTable *rectable = nullptr;
-        StorageEngine *store = getDatabase()->getStorageEngine(getName());
+        Database* db = reinterpret_cast<Database*>(getDatabase());
+        assert(db != nullptr );
+
+        RecordTablePtr rectable = nullptr;
+        IStorageEngine *store = db->getStorageEngine(getName());
         Record *rec = store->LoadRecord(id);
         if (rec != nullptr)
         {
-            rectable = _CreateRecordTableFromRec(rec);
+            rectable= _CreateRecordTableFromRec(rec) ;
         }
         return rectable;
     }
@@ -266,7 +269,11 @@ namespace ruru
 
     bool RecordTable::Save()
     {
-        StorageEngine *store = table->getDatabase()->getStorageEngine(table->getName());
+        Database* db = reinterpret_cast<Database*>(table->getDatabase());
+        if ( !db)
+            return false;
+        
+        IStorageEngine *store = db->getStorageEngine(table->getName());
         return store->Save(*record, type == RecordType::eNew);
     }
 

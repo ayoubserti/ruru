@@ -17,6 +17,7 @@ database
     8- Cache
     9- Log files and transactions
    10- Allocator & memory management
+   11- REPL
 
 
 
@@ -28,8 +29,9 @@ In Progress:
   -[OK] compact schema as database file
   -[OK] use filesystem path 
   -[] remove pointers from public API --> to analyze 
-  -[OK] hide StorageEngine
-
+  -[OK] hide StorageEngine & Database impl
+  -[OK] one single public include
+  -[OK] static library
 
   how the storage engine must works?
   - 2 kind of records: newly one, and modified one

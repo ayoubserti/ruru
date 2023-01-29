@@ -5,10 +5,6 @@
 
 #include "pch.h"
 #include "ruru.h"
-#include "table.h"
-#include "resultset.h"
-#include "record.h"
-#include "database.h"
 
 namespace ruru
 {
@@ -19,11 +15,11 @@ namespace ruru
 
     std::shared_ptr<RecordTable> ResultSet::First()
     {
-        std::shared_ptr<RecordTable> rec(nullptr);
+        RecordTablePtr rec(nullptr);
         iter_ = 0;
         if (!Eof())
         {
-            rec.reset(table_->GetRecord(records_id_[iter_]));
+            rec = table_->GetRecord(records_id_[iter_]) ;
         }
         return rec;
     }
@@ -37,20 +33,13 @@ namespace ruru
 
     std::shared_ptr<RecordTable> ResultSet::Next()
     {
-        std::shared_ptr<RecordTable> rec(nullptr);
+        RecordTablePtr rec(nullptr);
         iter_++;
         if (!Eof())
         {
-            rec.reset(table_->GetRecord(records_id_[iter_]));
+            rec  = table_->GetRecord(records_id_[iter_]) ;
         }
         return rec;
-    }
-
-    // Filter
-    Filter::Filter(Table *tbl, Column *col, OperatorType oper, const Value_t &v1, const Value_t &v2)
-        : table(tbl), column(col), oper(oper), value1(v1), value2(v2)
-    {
-        column_indx = tbl->getColumnIndex(col->getName());
     }
 
 }

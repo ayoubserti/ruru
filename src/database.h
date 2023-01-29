@@ -1,53 +1,49 @@
 #ifndef _H_DATABASE_HH__
 #define _H_DATABASE_HH__
 
+#include "ruru.h"
 namespace ruru
 {
     //forward declaration
-    namespace internal
-    {
-        class BasicStorageEngine;
-    }
-    class StorageEngine;
+    class IStorageEngine;
     class Table;
     
-    class Database
+    //Database class is an implementation of interface IDatabase
+    class Database : public IDatabase
     {
         std::string name;
         std::filesystem::path path;
-        std::map<std::string, Table *> tables;
-        std::map<std::string, StorageEngine *> storageEngines;
-        std::unique_ptr<Database> schema; //{nullptr};
+        std::map<std::string, TablePtr> tables;
+        std::map<std::string, IStorageEngine *> storageEngines;
+        std::shared_ptr<Database> schema; //{nullptr};
 
         Database(const std::filesystem::path &path);
 
         void _initSchemaDB();
 
-    public:
-        static Database *newDatabase(const std::filesystem::path &path);
+        friend class IDatabase;
 
-        // openDatabase from path
-        static Database *openDatabase(const std::filesystem::path &path);
+    public:
 
         // Adding a new table to the database
-        Table *newTable(const std::string &table_name);
+        TablePtr newTable(const std::string &table_name) override;
 
         // Getting a table by name
-        Table *getTable(const std::string &tableName);
+        TablePtr getTable(const std::string &tableName) override;
 
         // Getting all tables in the database
-        std::vector<Table *> getAllTables();
+        std::vector<TablePtr> getAllTables() override;
 
         // Removing a table from the database
-        void removeTable(const std::string &tableName);
+        void removeTable(const std::string &tableName) override;
 
         // Getting the storage engine for a table
-        StorageEngine *getStorageEngine(const std::string &tableName);
+        IStorageEngine *getStorageEngine(const std::string &tableName) ;
 
         // Save Database schema
-        bool saveSchema(const std::filesystem::path &path);
+        bool saveSchema(const std::filesystem::path &path) override;
 
-        ~Database();
+        virtual ~Database();
     };
 
 }

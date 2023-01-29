@@ -5,12 +5,33 @@
 
 #include "pch.h"
 #include "ruru.h"
-#include "resultset.h"
-#include "storage_engine.h"
+#include "basic_storage_engine.h"
 #include "record.h"
 
 using namespace ruru;
-using namespace ruru::internal; 
+using namespace ruru::internal;
+
+namespace ruru::internal
+{
+    class RecordFile
+    {
+    public:
+        RecordFile(std::fstream &file_stream);
+
+        // Read a record from the file.
+        bool Read(RecordId &id, Record *record);
+
+        // Write a record to the file.
+        bool Write(const Record &record);
+
+        // Delete a record from the file.
+        bool Delete(RecordId id);
+
+    private:
+        std::fstream &file_stream_;
+    };
+
+}
 
 // tools
 bool _ApplyFilter(const Record &rec, const Filter &filter)
@@ -51,7 +72,9 @@ bool _ApplyFilter(const Record &rec, const Filter &filter)
 
 // Constructor
 BasicStorageEngine::BasicStorageEngine(const std::string &file_name, bool forSchema)
-    : file_name_(file_name), current_rec_id_(-1), is_for_schema_(forSchema)
+    : file_name_(file_name),
+      current_rec_id_(-1),
+      is_for_schema_(forSchema)
 {
     if (!is_for_schema_)
     {
@@ -68,7 +91,7 @@ void BasicStorageEngine::Insert(const Record &record)
     // Open the file in append mode
     std::fstream file(file_name_, std::ios::app);
 
-    if ( !is_for_schema_)
+    if (!is_for_schema_)
     {
         // Update the index
         index_.Insert(record.GetKey(), file.tellp());
@@ -76,7 +99,7 @@ void BasicStorageEngine::Insert(const Record &record)
         // update hidden index
         row_id_index_.Insert(record.row_id_, std::make_pair<RecordLength_t, RecordPosition_t>(record.GetRowSize(), file.tellp()));
     }
-    
+
     RecordFile record_file(file);
     record_file.Write(record);
 
@@ -114,7 +137,8 @@ std::vector<Record> BasicStorageEngine::SelectAll()
 // Look up a record by key
 std::vector<Record> BasicStorageEngine::Lookup(const std::string &key)
 {
-    if ( is_for_schema_) return {};
+    if (is_for_schema_)
+        return {};
     // Use the index to find the offset of the record in the file
     int offset = index_.Lookup(key);
 
@@ -141,7 +165,7 @@ std::vector<RecordId> BasicStorageEngine::Lookup(const Filters_t &filters)
 {
 
     std::vector<RecordId> rowsid;
-    
+
     // table full scan
     auto entries = row_id_index_.GetEntries();
     for (auto &it : entries)
@@ -320,9 +344,16 @@ bool BasicStorageEngine::Save(Record &record, bool isNew)
 
 bool BasicStorageEngine::Flush()
 {
-    if ( !is_for_schema_)
+    if (!is_for_schema_)
+    {
         SaveIndex();
+    }
     return true;
+}
+
+bool BasicStorageEngine::DropStorage()
+{
+    return std::filesystem::remove(file_name_);
 }
 
 RecordLength_t BasicStorageEngine::_LoadRecord(RecordPosition_t position, Record &rec)
@@ -339,4 +370,138 @@ RecordLength_t BasicStorageEngine::_LoadRecord(RecordPosition_t position, Record
     }
     file.close();
     return len;
+}
+
+template <typename T>
+bool Read(T &stream, Field &rec)
+{
+    // Read the 8-bit type field
+    stream.read(reinterpret_cast<char *>(&rec.type_), sizeof(rec.type_));
+    // Check for stream errors or end of file
+    if (stream.fail())
+    {
+        return false;
+    }
+
+    switch (rec.type_)
+    {
+    case DataTypes::eInteger:
+    {
+        rec.value_.reset((char *)malloc(sizeof(int64_t)));
+        stream.read(rec.value_.get(), sizeof(uint64_t)); // TODO: manage endiness
+    }
+    break;
+
+    case DataTypes::eDouble:
+    {
+        rec.value_.reset((char *)malloc(sizeof(double)));
+        stream.read(rec.value_.get(), sizeof(double)); // TODO: manage endiness
+    }
+    break;
+    case DataTypes::eVarChar:
+    {
+        // read the length
+        uint64_t len;
+        stream.read(reinterpret_cast<char *>(&len), sizeof(len));
+        if (stream.fail())
+            return false;
+
+        rec.value_.reset((char *)malloc(len + sizeof(len)));
+        memcpy(rec.value_.get(), &len, sizeof(len));
+        stream.read(rec.value_.get() + sizeof(len), len);
+        break;
+    }
+        // missing eBinary, until implementation of binary vector
+    default:
+        // !!< ERROR
+        return false;
+    }
+
+    // Check for stream errors or end of file
+    if (stream.fail())
+    {
+        return false;
+    }
+    return true;
+}
+
+template <typename T>
+void Write(T &stream, const Field &rec)
+{
+    // Write the 8-bit type field
+    stream.write(reinterpret_cast<const char *>(&rec.type_), sizeof(rec.type_));
+    switch (rec.type_)
+    {
+    case DataTypes::eInteger:
+        stream.write(reinterpret_cast<const char *>(rec.value_.get()), sizeof(uint64_t));
+        break;
+    case DataTypes::eDouble:
+        stream.write(reinterpret_cast<const char *>(rec.value_.get()), sizeof(double));
+        break;
+    case DataTypes::eVarChar:
+    {
+        // read the length
+        uint64_t len = *(uint64_t *)(rec.value_.get());
+        stream.write(reinterpret_cast<const char *>(rec.value_.get()), len + sizeof(len));
+        break;
+    }
+    case DataTypes::eBinary:
+    case DataTypes::eUnknown:
+        throw new std::exception();
+        // missing eBinary, until implementation of binary vector
+
+        // default:
+        //  !!< ERROR
+    }
+}
+
+// RecordFile
+RecordFile::RecordFile(std::fstream &inFile)
+    : file_stream_(inFile) {}
+
+bool RecordFile::Read(RecordId &id, Record *record)
+{
+    bool result = true;
+    if (id == -1)
+    {
+        // get the record in the current position
+        file_stream_.read(reinterpret_cast<char *>(&record->row_id_), sizeof(record->row_id_));
+        if (file_stream_.fail())
+            return false;
+
+        // Read field list
+        uint64_t field_nbr;
+        file_stream_.read(reinterpret_cast<char *>(&field_nbr), sizeof(field_nbr));
+        if (file_stream_.fail())
+            return false;
+
+        record->fields_.resize(field_nbr);
+        for (uint64_t i = 0; i < field_nbr; ++i)
+        {
+            if (!::Read(file_stream_, record->fields_[i]))
+            {
+                // error
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool RecordFile::Write(const Record &record)
+{
+    RecordId id = record.row_id_;
+    uint64_t z = record.fields_.size();
+    file_stream_.write(reinterpret_cast<const char *>(&id), sizeof(record.row_id_));
+    file_stream_.write(reinterpret_cast<const char *>(&z), sizeof(uint64_t));
+    for (auto &&it : record.fields_)
+    {
+        ::Write(file_stream_, it);
+    }
+    return true;
+}
+
+bool RecordFile::Delete(RecordId id)
+{
+    return false;
 }

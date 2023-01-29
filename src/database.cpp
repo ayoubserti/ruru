@@ -2,11 +2,9 @@
 
 #include "pch.h"
 #include "ruru.h"
-#include "table.h"
 #include "database.h"
-#include "storage_engine.h"
 #include "record.h"
-#include "resultset.h"
+#include "internal/basic_storage_engine.h"
 namespace ruru
 {
     //constants
@@ -59,7 +57,7 @@ namespace ruru
         assert(schema == nullptr);
         schema.reset(new Database(name));
 
-        Table *schemaTable = new Table(__schema, schema.get());
+        TablePtr schemaTable { new Table(__schema, schema)};
         Column object_name("object_name", DataTypes::eVarChar);     // name
         Column object_kind("object_kind", DataTypes::eVarChar);     // table, column, index
         Column object_type("object_type", DataTypes::eVarChar);     // data type
@@ -68,20 +66,21 @@ namespace ruru
         schemaTable->addColumn(object_kind);
         schemaTable->addColumn(object_type);
         schemaTable->addColumn(object_parent);
-        StorageEngine *schemaStore = new BasicStorageEngine(path, true);
-        schema->tables[__schema] = schemaTable;
-        schema->storageEngines[__schema] = schemaStore;
+        IStorageEngine *schemaStore = new BasicStorageEngine(path, true);
+        Database*  impl_schema = reinterpret_cast<Database*>(schema.get()); 
+        impl_schema->tables[__schema] = schemaTable;
+        impl_schema->storageEngines[__schema] = schemaStore;
         
     }
 
-    Database *Database::newDatabase(const std::filesystem::path &path)
+    IDatabase *IDatabase::newDatabase(const std::filesystem::path &path)
     {
         Database *db = new Database(path);
         db->_initSchemaDB();
         return db;
     }
 
-    Database *Database::openDatabase(const std::filesystem::path &path)
+    IDatabase *IDatabase::openDatabase(const std::filesystem::path &path)
     {
         /*
         database folder structure:
@@ -91,8 +90,8 @@ namespace ruru
         */
         Database *db = new Database(path);
         db->_initSchemaDB();
-        StorageEngine *schemaStore = db->schema->getStorageEngine(__schema);
-        Table *schemaTable = db->schema->getTable(__schema);
+        IStorageEngine *schemaStore = db->schema->getStorageEngine(__schema);
+        TablePtr schemaTable =  db->schema->getTable(__schema);
         std::vector<Record> all_tables_structrue = schemaStore->SelectAll();
 
         for (auto it = all_tables_structrue.begin(); it != all_tables_structrue.end(); ++it)
@@ -100,7 +99,7 @@ namespace ruru
             // for simplicity purpose, we consider record of table objects are stored before column objects
             // The forthcoming implementation of "ORDER BY" will eliminate this limitation. 
             assert(it->fields_.size() % 4 == 0); // debugging
-            RecordTable *rec = schemaTable->GetRecord(it->row_id_);
+            RecordTablePtr rec = schemaTable->GetRecord(it->row_id_);
             std::string xname;
             rec->GetFieldValue("object_name", xname);
             std::string xkind;
@@ -115,7 +114,7 @@ namespace ruru
             }
             else if (xkind == "COLUMN")
             {
-                Table *tbl = db->getTable(xparent);
+                TablePtr tbl = db->getTable(xparent);
                 Column cl(xname, getTypeFromString(xtype));
                 tbl->addColumn(cl);
             }
@@ -127,21 +126,22 @@ namespace ruru
         return db;
     }
 
-    Table* Database::newTable(const std::string& table_name)
+    TablePtr Database::newTable(const std::string& table_name)
     {
         if ( tables.find(table_name) != tables.end())
             return tables[table_name];
-        Table* tbl = new Table(table_name, this);
-        tables[table_name] = tbl;
+        
+        TablePtr tbl ( new Table(table_name, this->shared_from_this())) ;
+        tables[table_name]= tbl ;
         auto parent = path.parent_path();
         
-        StorageEngine* store = new BasicStorageEngine(parent.append(table_name + db_extension));
+        IStorageEngine* store = new BasicStorageEngine(parent.append(table_name + db_extension));
         storageEngines[table_name] = store;
         return tbl;
         
     }
 
-    Table *Database::getTable(const std::string &tableName)
+    TablePtr Database::getTable(const std::string &tableName)
     {
         auto it = tables.find(tableName);
         if (it == tables.end())
@@ -150,9 +150,9 @@ namespace ruru
             return it->second;
     }
 
-    std::vector<Table *> Database::getAllTables()
+    std::vector<TablePtr> Database::getAllTables()
     {
-        std::vector<Table *> res;
+        std::vector<TablePtr> res;
         for (auto &[name, table] : tables)
         {
             res.push_back(table);
@@ -166,7 +166,7 @@ namespace ruru
         storageEngines.erase(tableName);
     }
 
-    StorageEngine *Database::getStorageEngine(const std::string &tableName)
+    IStorageEngine *Database::getStorageEngine(const std::string &tableName)
     {
         auto it = storageEngines.find(tableName);
         if (it == storageEngines.end())
@@ -180,6 +180,10 @@ namespace ruru
         bool result = true;
         auto tbl_schema = schema->getTable(__schema);
         assert(tbl_schema != nullptr);
+        //drop storage 
+        auto store_schema = schema->getStorageEngine(__schema);
+        assert(store_schema != nullptr);
+        store_schema->DropStorage();
         for (auto &&tbl : tables)
         {
             auto rec = tbl_schema->CreateRecord();
@@ -188,7 +192,6 @@ namespace ruru
             rec->SetFieldValue("object_type", "");
             rec->SetFieldValue("object_parent", "");
             rec->Save();
-            delete rec;
             const auto &cols = tbl.second->getColumns();
             for (const auto &it : cols)
             {
@@ -198,7 +201,6 @@ namespace ruru
                 rec->SetFieldValue("object_type", getStringFromType(it.getType()));
                 rec->SetFieldValue("object_parent", tbl.first);
                 rec->Save();
-                delete rec;
             }
         }
 
@@ -211,8 +213,6 @@ namespace ruru
         for (auto &&it : storageEngines)
              it.second->Flush();
 
-        for (auto &&it : tables)
-            delete it.second;
         for (auto &&it : storageEngines)
             delete it.second;
     }

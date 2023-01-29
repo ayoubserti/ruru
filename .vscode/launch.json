@@ -8,7 +8,7 @@
             "name": "Debug with LLDB",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/bin/rurudb",
+            "program": "${workspaceFolder}/build/bin/example_ruru",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

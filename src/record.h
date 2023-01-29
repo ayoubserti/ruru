@@ -3,6 +3,7 @@
 
 namespace ruru
 {
+    
     struct Field
     {
         Field();
@@ -27,25 +28,7 @@ namespace ruru
             : row_id_(-1), fields_{init} {}
         const RecordLength_t GetRowSize() const;
     };
-
-    class RecordFile
-    {
-    public:
-        RecordFile(std::fstream &file_stream);
-
-        // Read a record from the file.
-        bool Read(RecordId &id, Record *record);
-
-        // Write a record to the file.
-        bool Write(const Record &record);
-
-        // Delete a record from the file.
-        bool Delete(RecordId id);
-
-    private:
-        std::fstream &file_stream_;
-    };
-
+    
 }
 
 #endif //_H_RECORD__HH_
