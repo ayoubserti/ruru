@@ -47,14 +47,14 @@ auto openDatabase(std::filesystem::path path)
     if (!std::filesystem::is_regular_file(path))
         return ptr;
     
-    ptr.reset(IDatabase::newDatabase(path.filename()));
+    ptr = IDatabase::newDatabase(path.filename());
 
     return ptr;
 }
 
 auto newDatabase(std::filesystem::path path, const std::string &json_str)
 {
-    std::shared_ptr<IDatabase> ptr(IDatabase::newDatabase(path));
+    std::shared_ptr<IDatabase> ptr = IDatabase::newDatabase(path);
 
     nlohmann::json json = nlohmann::json::parse(json_str);
    
@@ -171,5 +171,6 @@ int main()
     TablePtr tbl = db->getTable("Employee");
     auto r = tbl->Search({});
 #endif     
+    std::cout << "Leaks : " << db.use_count() << "\n";
     return 0;
 }

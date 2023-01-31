@@ -40,7 +40,7 @@ namespace ruru
         return !isNullable;
     }
 
-    Table::Table(std::string name, DatabasePtr db) : name(std::move(name)), database(db) {}
+    Table::Table(std::string name, DatabasePtr db) : name(std::move(name)), database(db->weak_from_this()) {}
 
     void Table::addColumn(const Column &col)
     {
@@ -125,7 +125,8 @@ namespace ruru
 
     ResultSetPtr Table::Search(const Filters_t &filters)
     {
-        Database* db = reinterpret_cast<Database*>(database.get());
+        auto db_shared = database.lock();
+        Database* db = dynamic_cast<Database*>(db_shared.get());
         assert(db != nullptr);
 
         ResultSetPtr result( new ResultSet(filters));
@@ -141,7 +142,8 @@ namespace ruru
     RecordTablePtr Table::GetRecord(RecordId id)
     {
         // id is internal ID ( rowid)
-        Database* db = reinterpret_cast<Database*>(getDatabase());
+        auto db_shared   = getDatabase().lock();
+        Database* db = dynamic_cast<Database*>(db_shared.get());
         assert(db != nullptr );
 
         RecordTablePtr rectable = nullptr;
@@ -269,7 +271,8 @@ namespace ruru
 
     bool RecordTable::Save()
     {
-        Database* db = reinterpret_cast<Database*>(table->getDatabase());
+        auto db_shared = table->getDatabase().lock();
+        Database* db = dynamic_cast<Database*>(db_shared.get());
         if ( !db)
             return false;
         

@@ -73,14 +73,17 @@ namespace ruru
         
     }
 
-    IDatabase *IDatabase::newDatabase(const std::filesystem::path &path)
+    std::shared_ptr<IDatabase> IDatabase::newDatabase(const std::filesystem::path &path)
     {
-        Database *db = new Database(path);
-        db->_initSchemaDB();
+        std::shared_ptr<IDatabase> db = nullptr;
+        auto xdb = new Database(path);
+        db.reset(xdb);
+        xdb->_initSchemaDB();
+        
         return db;
     }
 
-    IDatabase *IDatabase::openDatabase(const std::filesystem::path &path)
+    std::shared_ptr<IDatabase> IDatabase::openDatabase(const std::filesystem::path &path)
     {
         /*
         database folder structure:
@@ -88,7 +91,9 @@ namespace ruru
         - structure is stored into a table file (<db_name>.ru)
         - each table have it's data file (<table_name>.ru)
         */
-        Database *db = new Database(path);
+        std::shared_ptr<IDatabase> ptr = nullptr;
+        auto db = new Database(path);
+        ptr.reset(db);
         db->_initSchemaDB();
         IStorageEngine *schemaStore = db->schema->getStorageEngine(__schema);
         TablePtr schemaTable =  db->schema->getTable(__schema);
@@ -123,7 +128,7 @@ namespace ruru
                 assert(false && "NOT IMPLEMENTED");
             }
         }
-        return db;
+        return ptr;
     }
 
     TablePtr Database::newTable(const std::string& table_name)

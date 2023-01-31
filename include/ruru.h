@@ -102,10 +102,10 @@ namespace ruru
     {
 
     public:
-        static IDatabase *newDatabase(const std::filesystem::path &path);
+        static std::shared_ptr<IDatabase> newDatabase(const std::filesystem::path &path);
 
         // openDatabase from path
-        static IDatabase *openDatabase(const std::filesystem::path &path);
+        static std::shared_ptr<IDatabase> openDatabase(const std::filesystem::path &path);
 
         // Adding a new table to the database
         virtual TablePtr newTable(const std::string &table_name) = 0;
@@ -122,14 +122,14 @@ namespace ruru
         // Save Database schema
         virtual bool saveSchema(const std::filesystem::path &path) = 0;
 
-        virtual ~IDatabase() {}
+        virtual ~IDatabase() {};
 
     };
 
     
   class ResultSet
     {
-        Table *table_;
+        Table* table_;
         Filters_t filters_;
         std::vector<RecordId> records_id_;
         int64_t iter_;
@@ -250,7 +250,7 @@ namespace ruru
 
     class Table 
     {
-        std::shared_ptr<IDatabase> database;
+        std::weak_ptr<IDatabase> database;
         std::string name;
         std::vector<Column> columns;
         std::unordered_map<std::string, int> columns_name_to_index;
@@ -262,7 +262,7 @@ namespace ruru
         // private member function
         RecordTablePtr _CreateRecordTableFromRec(Record *rec);
 
-        Table(std::string name, DatabasePtr db);
+        Table(std::string name, std::shared_ptr<IDatabase> db);
 
     public:
         // Adding a new column to table
@@ -297,7 +297,7 @@ namespace ruru
             return columns;
         }
 
-        IDatabase *getDatabase() { return database.get(); }
+        std::weak_ptr<IDatabase> getDatabase() { return database; }
 
         // Lookup a result set by filter
         // for instance, get all records for which 'age' > 34

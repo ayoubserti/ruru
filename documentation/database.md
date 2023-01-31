@@ -7,17 +7,17 @@ database
    - RecordFile
    - Field
 
-    1- Create a new database from JSON schema
-    2- Persiste Database table into the disc
-    3- Create Record and populate values
-    4- Save Record 
-    5- Open Database from disq file
-    6- Search record 
-    7- Manage Indexes
-    8- Cache
+    1- Create a new database from JSON schema  --> Application responsability
+    2- Persiste Database table into the disc    --> done 
+    3- Create Record and populate values       --> done 
+    4- Save Record                             --> done
+    5- Open Database from disq file            --> done
+    6- Search record                           --> done
+    7- Manage Indexes                  
+    8- Cache                              
     9- Log files and transactions
    10- Allocator & memory management
-   11- REPL
+   11- REPL 
 
 
 
