@@ -36,3 +36,24 @@ target_link_libraries(example_ruru "rurudb")
 
 # Link the external libraries
 target_link_libraries(example_ruru ${CONAN_LIBS})
+
+
+########################## REPL ################################
+# Example
+file(GLOB SOURCES_REPL "repl/*.cpp" "example/*.h")
+add_executable(repl ${SOURCES_REPL})
+#precompiled header
+#target_precompile_headers(example_ruru PRIVATE "example/pch.h")
+
+# Add include 
+target_include_directories(repl PUBLIC "include")
+# Make the example dependent of rurudb
+add_dependencies(repl rurudb)
+# Link with rurudb library
+target_link_libraries(repl "rurudb")
+target_link_libraries( repl "readline")
+
+# Link the external libraries
+target_link_libraries(repl ${CONAN_LIBS})
+
+

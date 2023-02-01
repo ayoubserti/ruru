@@ -127,7 +127,7 @@ int main()
 #if 1
     std::shared_ptr<IDatabase> db = newDatabase("test/db1/db1.ru", structure);
     TablePtr tbl = db->getTable("Employee");
-    for (int i = 0; i < 10; i++)
+    /*for (int i = 0; i < 10; i++)
     {
         RecordTablePtr rec = tbl->CreateRecord();
         int64_t id = 10 + i;
@@ -139,7 +139,7 @@ int main()
         rec->SetFieldValue("NAME", n);
         rec->Save();
         
-    }
+    }*/
     Filters_t filters;
     std::shared_ptr<Filter> filter1(new Filter(tbl->getColumnIndex("ID"), OperatorType::eLesser, 15, 0));
     filters.push_back(filter1);
@@ -160,7 +160,10 @@ int main()
         if (r != nullptr)
         {
             r->GetFieldValue("NAME", nn);
-            std::cout << nn << std::endl;
+            std::cout << "Name " << nn << std::endl;
+            int64_t v;
+            r->GetFieldValue("AGE" , v);
+            std::cout << "age " << v << std::endl;
         }
     }
 

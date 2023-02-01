@@ -14,12 +14,13 @@
 using ret = CppReadline::Console::ReturnCode;
 
 std::shared_ptr<ruru::IDatabase> gDatabase = nullptr;
+ruru::RecordTablePtr                   gRecord = nullptr;
 
 unsigned info(const std::vector<std::string> &args)
 {
     if (args.size() == 1)
     {
-        std::cout << "ruruDB is WIP\n"
+        std::cout << "033[1mruruDB\033[0m is WIP\n"
                   << "this REPL is a quick and dirty application of rurudb library\n"
                   << "command list:\n\n"
                   << "      help    show this help\n"
@@ -41,7 +42,7 @@ unsigned info(const std::vector<std::string> &args)
 unsigned print_rec (const std::shared_ptr<ruru::Table> tbl , const ruru::RecordTablePtr rec )
 {
     auto& colls = tbl->getColumns();
-    std::cout << "{\n" ;
+    std::cout << "\n{ " ;
     for ( auto&& it : colls )
     {
         switch( it.getType())
@@ -50,28 +51,28 @@ unsigned print_rec (const std::shared_ptr<ruru::Table> tbl , const ruru::RecordT
             {
                 std::string v;
                 rec->GetFieldValue(it.getName(), v);
-                std::cout << it.getName() <<  " : " << v <<"\n";
+                std::cout << "\033[30m\""<<it.getName() <<  "\"\033[0m : \"" << v <<"\"\n";
                 break;
             }
             case ruru::DataTypes::eInteger:
             {
                 int64_t v;
                 rec->GetFieldValue(it.getName(), v);
-                std::cout << it.getName() <<  " : " << v <<"\n";
+                std::cout << "\033[30m\""<<it.getName() <<  "\"\033[0m : " << v <<"\n";
                 break;
             }
             case ruru::DataTypes::eDouble:
             {
                 double v;
                 rec->GetFieldValue(it.getName(), v);
-                std::cout << it.getName() <<  " : " << v <<"\n";
+                std::cout << "\033[30m\""<<it.getName() <<  "\"\033[0m : " << v <<"\n";
                 break;
             }
             default:
                 break;
         }
     }
-     std::cout << "}\n" ;
+     std::cout << " }\n" ;
     return ret::Ok;
 }
 
@@ -89,7 +90,6 @@ unsigned search(std::shared_ptr<ruru::Table> tbl,const ruru::Filters_t& filters)
         std::cout << "Empty\n";
         return ret::Ok;
     }
-    res->First();
     while ( !res->Eof())
     {
         auto rec = res->Next();
@@ -139,20 +139,31 @@ unsigned dbCmd(const std::vector<std::string> &args)
         {
             return search(table, {});
         }
+        else if ( args.size() && args[3] == "new")
+        {
+            //create a new records
+            gRecord =  table->CreateRecord();
+        }
 
     }
 
     return ret::Ok;
 }
 
+unsigned clear ( const std::vector<std::string>& )
+{
+    std::cout << "\033[2J" << std::endl;
+    return ret::Ok;
+}
+
 int main(int argc , char** argv)
 {
     CppReadline::Console console("> ");
-
+    console.registerCommand("clear" , clear);
     console.registerCommand("help", info);
     console.registerCommand("open", openDB);
     console.registerCommand("database", dbCmd);
-
+    
     console.executeCommand("help");
     if ( argc > 1)
         console.executeFile(argv[1]);

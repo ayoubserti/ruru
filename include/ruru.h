@@ -40,12 +40,6 @@ namespace ruru
         eUnknown = 0
     };
 
-    union UnionValues
-    {
-        uint64_t nbr;
-        double floating;
-        char *txt;
-    };
 
     static const char* db_extension = ".ru";
 

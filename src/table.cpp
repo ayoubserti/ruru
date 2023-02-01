@@ -209,9 +209,7 @@ namespace ruru
         if (cl.getType() != DataTypes::eInteger)
             return false;
         Field fl = record->fields_[i];
-        UnionValues v;
-        v.txt = fl.value_.get();
-        value = v.nbr;
+        value = *reinterpret_cast<int64_t *>(fl.value_.get());
         return true;
     }
 
@@ -226,10 +224,7 @@ namespace ruru
         if (cl.getType() != DataTypes::eDouble)
             return false;
         Field fl = record->fields_[i];
-        UnionValues v;
-        v.txt = fl.value_.get();
-        value = v.floating;
-
+        value = *reinterpret_cast<double *>(fl.value_.get());
         return true;
     }
 

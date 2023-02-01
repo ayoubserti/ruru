@@ -9,7 +9,7 @@
 namespace ruru
 {
     ResultSet::ResultSet(const Filters_t &filters)
-        : filters_(filters), iter_(0)
+        : filters_(filters), iter_(-1)
     {
     }
 
@@ -26,7 +26,7 @@ namespace ruru
 
     bool ResultSet::Eof()
     {
-        if (iter_ >= records_id_.size())
+        if (iter_ >= (int64_t)records_id_.size())
             return true;
         return false;
     }

@@ -57,9 +57,7 @@ bool _ApplyFilter(const Record &rec, const Filter &filter)
     break;
     case DataTypes::eVarChar:
     {
-        UnionValues v;
-        v.txt = fl.value_.get();
-        std::string value = v.txt + sizeof(int64_t);
+        std::string value = fl.value_.get();
         return filter.Apply(value);
     }
 
