@@ -162,6 +162,14 @@ namespace ruru
         : table(tbl), record(rec)
     {
     }
+    void RecordTable::SetFieldNull( const std::string& field_name)
+    {
+        int i = table->getColumnIndex(field_name);
+        if (i != -1)
+        {
+            record->fields_[i].SetValue(nullptr);
+        }
+    }
 
     void RecordTable::SetFieldValue(const std::string &field_name, int64_t value)
     {
@@ -261,6 +269,19 @@ namespace ruru
             return false;
         Field fl = record->fields_[i];
         value = fl.value_;
+        return true;
+    }
+
+
+    bool RecordTable::IsFieldNull(const std::string &field_name , bool& value)
+    {
+        int i = table->getColumnIndex(field_name);
+        if (i == -1)
+        {
+            return false;
+        }
+        Field fl = record->fields_[i];
+        value = (fl.type_ == DataTypes::eNull) | (fl.value_ == nullptr);
         return true;
     }
 

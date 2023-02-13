@@ -17,7 +17,9 @@ namespace ruru
         eInteger = 1,
         eDouble,
         eVarChar,
-        eBinary
+        eBinary,
+
+        eNull = 0xFF
     };
 
     enum class RecordType
@@ -314,6 +316,7 @@ namespace ruru
     public:
         RecordTable() = delete;
 
+        void SetFieldNull(const std::string &field_name);
         void SetFieldValue(const std::string &field_name, int64_t value);
 
         void SetFieldValue(const std::string &field_name, double value);
@@ -321,6 +324,9 @@ namespace ruru
         void SetFieldValue(const std::string &field_name, const std::string &value);
 
         void SetFieldValue(const std::string &field_name, const std::shared_ptr<char> &value);
+
+        bool 
+        IsFieldNull(const std::string &field_name , bool& value );
 
         bool
         GetFieldValue(const std::string &field_name, int64_t &value);

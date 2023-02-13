@@ -1,3 +1,8 @@
-open ../test/db1/db1.ru
+open test/db1/db1.ru
 database tables
 database table Employee all
+database table Employee new 
+record set NAME "HEELO"
+record set ID 10
+record set AGE 76
+record save

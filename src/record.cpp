@@ -41,6 +41,8 @@ namespace ruru
 
     std::size_t Field::GetHash() const
     {
+        if ( value_ == nullptr)
+            return 0;
         switch (type_)
         {
         case DataTypes::eInteger:
@@ -92,7 +94,8 @@ namespace ruru
             case DataTypes::eBinary:
             {
                 len += sizeof(uint64_t);
-                len += *(reinterpret_cast<uint64_t *>(it.value_.get()));
+                if( it.value_ != nullptr)
+                    len += *(reinterpret_cast<uint64_t *>(it.value_.get()));
                 break;
             }
 

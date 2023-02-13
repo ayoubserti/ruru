@@ -383,6 +383,9 @@ bool Read(T &stream, Field &rec)
 
     switch (rec.type_)
     {
+    case DataTypes::eNull:
+        rec.value_= nullptr;
+        break;
     case DataTypes::eInteger:
     {
         rec.value_.reset((char *)malloc(sizeof(int64_t)));
@@ -427,9 +430,20 @@ template <typename T>
 void Write(T &stream, const Field &rec)
 {
     // Write the 8-bit type field
+    
+     if ( rec.value_ == nullptr)
+    {
+        //NULL is a parent type. every types derive for it
+        DataTypes v = DataTypes::eNull;
+        stream.write(reinterpret_cast<const char *>(&v), sizeof(v));
+        return ;
+    }
     stream.write(reinterpret_cast<const char *>(&rec.type_), sizeof(rec.type_));
+   
     switch (rec.type_)
     {
+        case DataTypes::eNull:
+        break;
     case DataTypes::eInteger:
         stream.write(reinterpret_cast<const char *>(rec.value_.get()), sizeof(uint64_t));
         break;

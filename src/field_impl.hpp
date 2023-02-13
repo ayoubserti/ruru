@@ -38,4 +38,11 @@ namespace ruru
         memcpy(value_.get() + sizeof(len), value.c_str(), len);
     }
 
+    template<>
+    void Field::SetValue( const nullptr_t& value)
+    {
+        type_ = DataTypes::eNull;
+        value_ = nullptr;
+    }
+
 }
