@@ -7,8 +7,8 @@
 #include "internal/basic_storage_engine.h"
 namespace ruru
 {
-    //constants
-    constexpr const char* __schema = "__schema";
+    // constants
+    constexpr const char *__schema = "__schema";
     // private functions
     struct TypeMapping
     {
@@ -46,18 +46,18 @@ namespace ruru
     using internal::BasicStorageEngine;
 
 #pragma region
-    
-    Database::Database(const std::filesystem::path &path) 
-    :name(path.filename())
-    ,path(path)
-    ,schema(nullptr) {}
+
+    Database::Database(const std::filesystem::path &path)
+        : name(path.filename()), path(path), schema(nullptr)
+    {
+    }
 
     void Database::_initSchemaDB()
     {
         assert(schema == nullptr);
         schema.reset(new Database(name));
 
-        TablePtr schemaTable { new Table(__schema, schema)};
+        TablePtr schemaTable{new Table(__schema, schema)};
         Column object_name("object_name", DataTypes::eVarChar);     // name
         Column object_kind("object_kind", DataTypes::eVarChar);     // table, column, index
         Column object_type("object_type", DataTypes::eVarChar);     // data type
@@ -67,10 +67,9 @@ namespace ruru
         schemaTable->addColumn(object_type);
         schemaTable->addColumn(object_parent);
         IStorageEngine *schemaStore = new BasicStorageEngine(path, true);
-        Database*  impl_schema = reinterpret_cast<Database*>(schema.get()); 
+        Database *impl_schema = reinterpret_cast<Database *>(schema.get());
         impl_schema->tables[__schema] = schemaTable;
         impl_schema->storageEngines[__schema] = schemaStore;
-        
     }
 
     std::shared_ptr<IDatabase> IDatabase::newDatabase(const std::filesystem::path &path)
@@ -79,7 +78,7 @@ namespace ruru
         auto xdb = new Database(path);
         db.reset(xdb);
         xdb->_initSchemaDB();
-        
+
         return db;
     }
 
@@ -96,13 +95,13 @@ namespace ruru
         ptr.reset(db);
         db->_initSchemaDB();
         IStorageEngine *schemaStore = db->schema->getStorageEngine(__schema);
-        TablePtr schemaTable =  db->schema->getTable(__schema);
+        TablePtr schemaTable = db->schema->getTable(__schema);
         std::vector<Record> all_tables_structrue = schemaStore->SelectAll();
 
         for (auto it = all_tables_structrue.begin(); it != all_tables_structrue.end(); ++it)
         {
             // for simplicity purpose, we consider record of table objects are stored before column objects
-            // The forthcoming implementation of "ORDER BY" will eliminate this limitation. 
+            // The forthcoming implementation of "ORDER BY" will eliminate this limitation.
             assert(it->fields_.size() % 4 == 0); // debugging
             RecordTablePtr rec = schemaTable->GetRecord(it->row_id_);
             std::string xname;
@@ -131,19 +130,22 @@ namespace ruru
         return ptr;
     }
 
-    TablePtr Database::newTable(const std::string& table_name)
+    TablePtr Database::newTable(const std::string &table_name)
     {
-        if ( tables.find(table_name) != tables.end())
+        if (tables.find(table_name) != tables.end())
             return tables[table_name];
-        
-        TablePtr tbl ( new Table(table_name, this->shared_from_this())) ;
-        tables[table_name]= tbl ;
+
+        TablePtr tbl(new Table(table_name, this->shared_from_this()));
+        tables[table_name] = tbl;
         auto parent = path.parent_path();
-        
-        IStorageEngine* store = new BasicStorageEngine(parent.append(table_name + db_extension));
+
+        IStorageEngine *store;
+        if (storeFactory != nullptr)
+            store = storeFactory->createStorageEngine(parent.append(table_name + db_extension));
+        else
+            store = new BasicStorageEngine(parent.append(table_name + db_extension));
         storageEngines[table_name] = store;
         return tbl;
-        
     }
 
     TablePtr Database::getTable(const std::string &tableName)
@@ -185,7 +187,7 @@ namespace ruru
         bool result = true;
         auto tbl_schema = schema->getTable(__schema);
         assert(tbl_schema != nullptr);
-        //drop storage 
+        // drop storage
         auto store_schema = schema->getStorageEngine(__schema);
         assert(store_schema != nullptr);
         store_schema->DropStorage();
@@ -212,11 +214,19 @@ namespace ruru
         return result;
     }
 
+    bool Database::setStorageEngineFactory(IStorageEngineFactory *factory)
+    {
+        if (storeFactory != nullptr)
+            return false;
+        storeFactory = factory;
+        return true;
+    }
+
     Database::~Database()
-    {   
-        //before leaving must flush all data
+    {
+        // before leaving must flush all data
         for (auto &&it : storageEngines)
-             it.second->Flush();
+            it.second->Flush();
 
         for (auto &&it : storageEngines)
             delete it.second;

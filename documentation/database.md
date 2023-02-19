@@ -17,7 +17,7 @@ database
     8- Cache                              
     9- Log files and transactions
    10- Allocator & memory management
-   11- REPL 
+   11- REPL (WIP)
 
 
 
@@ -40,3 +40,5 @@ In Progress:
    - folder name = database name
    - structure is stored into a table file (<db_name>.ru)
    - each table have it's data file (<table_name>.ru)
+
+ user defined storage engine

@@ -16,7 +16,8 @@ namespace ruru
         std::map<std::string, TablePtr> tables;
         std::map<std::string, IStorageEngine *> storageEngines;
         std::shared_ptr<Database> schema; //{nullptr};
-
+        IStorageEngineFactory*  storeFactory;
+        
         Database(const std::filesystem::path &path);
 
         void _initSchemaDB();
@@ -42,6 +43,9 @@ namespace ruru
 
         // Save Database schema
         bool saveSchema(const std::filesystem::path &path) override;
+
+        // set The storage Engine Factory
+        bool setStorageEngineFactory ( IStorageEngineFactory* factory) override; 
 
         virtual ~Database();
     };

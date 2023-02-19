@@ -92,7 +92,12 @@ namespace ruru
 
         virtual ~IStorageEngine(){};
     };
-
+    //interface StorageEngineFactory
+    class IStorageEngineFactory 
+    {
+        public:
+        virtual IStorageEngine* createStorageEngine( const std::string& name) = 0;
+    };
     //Interface IDatabase
     class IDatabase  : public std::enable_shared_from_this<IDatabase>
     {
@@ -117,6 +122,15 @@ namespace ruru
 
         // Save Database schema
         virtual bool saveSchema(const std::filesystem::path &path) = 0;
+
+        // set The storage Engine Factory
+        /*
+            \param factory the StorageEngineFactory to create Storage at need
+            return true the first call, the keep returing false
+            must be called one time
+            The caller owns the pointer.  
+        */
+        virtual bool setStorageEngineFactory ( IStorageEngineFactory* factory) = 0;
 
         virtual ~IDatabase() {};
 

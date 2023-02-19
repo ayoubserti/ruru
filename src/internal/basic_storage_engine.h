@@ -19,6 +19,13 @@ namespace ruru
     namespace internal
     {
 
+        class BasicStorageEngineFactory : public IStorageEngineFactory
+        {
+
+            public:
+            virtual IStorageEngine* createStorageEngine( const std::string& name) override;
+        };
+
         /*
           !!WIP
           BasicStorageEngine : Represent a Table Storage

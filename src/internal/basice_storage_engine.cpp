@@ -68,6 +68,12 @@ bool _ApplyFilter(const Record &rec, const Filter &filter)
     return result;
 }
 
+
+IStorageEngine* BasicStorageEngineFactory::createStorageEngine( const std::string& file_name)
+{
+    return new BasicStorageEngine(file_name);
+}
+
 // Constructor
 BasicStorageEngine::BasicStorageEngine(const std::string &file_name, bool forSchema)
     : file_name_(file_name),
