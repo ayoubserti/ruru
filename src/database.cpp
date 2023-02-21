@@ -48,7 +48,7 @@ namespace ruru
 #pragma region
 
     Database::Database(const std::filesystem::path &path)
-        : name(path.filename()), path(path), schema(nullptr)
+        : name(path.filename()), path(path), schema(nullptr),storeFactory(nullptr)
     {
     }
 
@@ -122,6 +122,16 @@ namespace ruru
                 Column cl(xname, getTypeFromString(xtype));
                 tbl->addColumn(cl);
             }
+            else if ( xkind == "ENGINEFACTORY")
+            {
+                // the factory to be used for the DB
+                auto factory =  ruru::getEngineFactory(xname);
+                if ( factory == nullptr)
+                {
+                    throw std::exception (); //TODO manage exception
+                }
+                db->setStorageEngineFactory(factory);
+            }
             else
             {
                 assert(false && "NOT IMPLEMENTED");
@@ -191,6 +201,14 @@ namespace ruru
         auto store_schema = schema->getStorageEngine(__schema);
         assert(store_schema != nullptr);
         store_schema->DropStorage();
+        //store the engine factory 
+        auto rec = tbl_schema->CreateRecord();
+        rec->SetFieldValue("object_name", _basic_factory);
+        rec->SetFieldValue("object_kind", "ENGINEFACTORY");
+        rec->SetFieldValue("object_type", "");
+        rec->SetFieldValue("object_parent", "");
+        rec->Save();
+
         for (auto &&tbl : tables)
         {
             auto rec = tbl_schema->CreateRecord();

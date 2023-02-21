@@ -3,6 +3,15 @@
 
 namespace ruru
 {
+
+    //global function
+    /*
+        @fn     Init
+        @def    Initialize rurudb
+                Load & register StorageEngine Factories
+    */
+    void Init();
+
     // define the record ID type
     typedef uint64_t RecordId;
 
@@ -44,6 +53,7 @@ namespace ruru
 
 
     static const char* db_extension = ".ru";
+    static const char* _basic_factory = "_basic_factory";
 
     //forward class
     class Record;
@@ -97,6 +107,7 @@ namespace ruru
     {
         public:
         virtual IStorageEngine* createStorageEngine( const std::string& name) = 0;
+        virtual std::string getName(  ) = 0 ;
     };
     //Interface IDatabase
     class IDatabase  : public std::enable_shared_from_this<IDatabase>
@@ -362,6 +373,11 @@ namespace ruru
         virtual ~RecordTable();
     };
 
+
+
+    bool registerEngineFactory( const std::string& name , IStorageEngineFactory* engineFactory);
+
+    IStorageEngineFactory* getEngineFactory( const std::string& name);
 
 }
 

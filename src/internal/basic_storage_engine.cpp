@@ -62,6 +62,9 @@ bool _ApplyFilter(const Record &rec, const Filter &filter)
     }
 
     break;
+    case DataTypes::eNull:
+    //TODO implement (is null, is not null ) filters
+    break;
     default:
         throw new std::exception();
     }
@@ -72,6 +75,11 @@ bool _ApplyFilter(const Record &rec, const Filter &filter)
 IStorageEngine* BasicStorageEngineFactory::createStorageEngine( const std::string& file_name)
 {
     return new BasicStorageEngine(file_name);
+}
+
+std::string  BasicStorageEngineFactory::getName( )
+{
+    return _basic_factory;
 }
 
 // Constructor
@@ -208,7 +216,7 @@ Record *BasicStorageEngine::LoadRecord(RecordId id)
     }
     else
     {
-        // schema file is small, quick scan
+        // schema file is a small file, quick scan
         std::fstream file(file_name_);
         if (!file.is_open())
             return nullptr;

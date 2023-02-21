@@ -24,6 +24,7 @@ namespace ruru
 
             public:
             virtual IStorageEngine* createStorageEngine( const std::string& name) override;
+            virtual std::string  getName(  ) override ;
         };
 
         /*

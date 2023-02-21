@@ -101,8 +101,12 @@ void saveSchema(IDatabase *db, std::filesystem::path path)
 
 int main(int argv, char **argc)
 {
+    // starting by Initializing ruru library
+    ruru::Init();
 
-    std::string structure = R"(
+    if (argv > 1)
+    {
+        std::string structure = R"(
 
         [ 
             {
@@ -123,11 +127,19 @@ int main(int argv, char **argc)
                 ]
             }
         ]
-    )";
-    if (argv > 1)
-    {
+        )";
         std::shared_ptr<IDatabase> db = newDatabase("test/db1/db1.ru", structure);
         TablePtr tbl = db->getTable("Employee");
+
+        for ( int i = 0 ; i< 20; i++){
+            RecordTablePtr rec = tbl->CreateRecord();
+            rec->SetFieldValue("ID", (int64_t)i);
+            int64_t age = i+15;
+            rec->SetFieldValue("AGE" , age);
+            rec->SetFieldValue("NAME", "AAA");
+            rec->Save();
+        }
+        
 
         Filters_t filters;
         std::shared_ptr<Filter> filter1(new Filter(tbl->getColumnIndex("ID"), OperatorType::eLesser, 15, 0));
@@ -140,21 +152,25 @@ int main(int argv, char **argc)
         ResultSetPtr res = tbl->Search(filters);
 
         auto r = res->First();
-        std::string nn;
-        r->GetFieldValue("NAME", nn);
-        std::cout << nn << std::endl;
-        while (!res->Eof())
+        if (r != nullptr)
         {
-            r = res->Next();
-            if (r != nullptr)
+            std::string nn;
+            r->GetFieldValue("NAME", nn);
+            std::cout << nn << std::endl;
+            while (!res->Eof())
             {
-                r->GetFieldValue("NAME", nn);
-                std::cout << "Name " << nn << std::endl;
-                int64_t v;
-                r->GetFieldValue("AGE", v);
-                std::cout << "age " << v << std::endl;
+                r = res->Next();
+                if (r != nullptr)
+                {
+                    r->GetFieldValue("NAME", nn);
+                    std::cout << "Name " << nn << std::endl;
+                    int64_t v;
+                    r->GetFieldValue("AGE", v);
+                    std::cout << "age " << v << std::endl;
+                }
             }
         }
+
         saveSchema(db.get(), "test/db1/db1.json");
     }
     else
@@ -163,7 +179,6 @@ int main(int argv, char **argc)
         TablePtr tbl = db->getTable("Employee");
         auto r = tbl->Search({});
         std::cout << "Leaks : " << db.use_count() << "\n";
-   
     }
 
     return 0;

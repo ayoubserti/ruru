@@ -111,14 +111,14 @@ namespace ruru
             fl.type_ = it.getType();
             rec->fields_.push_back(fl);
         }
-        RecordTablePtr rectbl( new RecordTable(this, rec));
+        RecordTablePtr rectbl(new RecordTable(this, rec));
         rectbl->type = RecordType::eNew;
         return rectbl;
     }
 
     RecordTablePtr Table::_CreateRecordTableFromRec(Record *rec)
     {
-        RecordTablePtr rectbl( new RecordTable(this, rec) ) ;
+        RecordTablePtr rectbl(new RecordTable(this, rec));
         rectbl->type = RecordType::eModifyed;
         return rectbl;
     }
@@ -126,10 +126,10 @@ namespace ruru
     ResultSetPtr Table::Search(const Filters_t &filters)
     {
         auto db_shared = database.lock();
-        Database* db = dynamic_cast<Database*>(db_shared.get());
+        Database *db = dynamic_cast<Database *>(db_shared.get());
         assert(db != nullptr);
 
-        ResultSetPtr result( new ResultSet(filters));
+        ResultSetPtr result(new ResultSet(filters));
         result->table_ = this;
 
         // apply the search in the StorageEngine and retrieve list of record Id
@@ -142,16 +142,16 @@ namespace ruru
     RecordTablePtr Table::GetRecord(RecordId id)
     {
         // id is internal ID ( rowid)
-        auto db_shared   = getDatabase().lock();
-        Database* db = dynamic_cast<Database*>(db_shared.get());
-        assert(db != nullptr );
+        auto db_shared = getDatabase().lock();
+        Database *db = dynamic_cast<Database *>(db_shared.get());
+        assert(db != nullptr);
 
         RecordTablePtr rectable = nullptr;
         IStorageEngine *store = db->getStorageEngine(getName());
         Record *rec = store->LoadRecord(id);
         if (rec != nullptr)
         {
-            rectable= _CreateRecordTableFromRec(rec) ;
+            rectable = _CreateRecordTableFromRec(rec);
         }
         return rectable;
     }
@@ -162,7 +162,7 @@ namespace ruru
         : table(tbl), record(rec)
     {
     }
-    void RecordTable::SetFieldNull( const std::string& field_name)
+    void RecordTable::SetFieldNull(const std::string &field_name)
     {
         int i = table->getColumnIndex(field_name);
         if (i != -1)
@@ -247,12 +247,20 @@ namespace ruru
         if (cl.getType() != DataTypes::eVarChar)
             return false;
         Field fl = record->fields_[i];
-
-        uint64_t *len = reinterpret_cast<uint64_t *>(fl.value_.get());
-        if (*len == 0)
+        if (fl.type_ == DataTypes::eNull)
+        {
             value = "";
+            return false;
+        }
         else
-            value.assign(fl.value_.get() + 8, *len);
+        {
+             uint64_t *len = reinterpret_cast<uint64_t *>(fl.value_.get());
+            if (*len == 0)
+                value = "";
+            else
+                value.assign(fl.value_.get() + 8, *len);
+        }
+       
 
         return true;
     }
@@ -272,8 +280,7 @@ namespace ruru
         return true;
     }
 
-
-    bool RecordTable::IsFieldNull(const std::string &field_name , bool& value)
+    bool RecordTable::IsFieldNull(const std::string &field_name, bool &value)
     {
         int i = table->getColumnIndex(field_name);
         if (i == -1)
@@ -288,14 +295,13 @@ namespace ruru
     bool RecordTable::Save()
     {
         auto db_shared = table->getDatabase().lock();
-        Database* db = dynamic_cast<Database*>(db_shared.get());
-        if ( !db)
+        Database *db = dynamic_cast<Database *>(db_shared.get());
+        if (!db)
             return false;
-        
+
         IStorageEngine *store = db->getStorageEngine(table->getName());
         return store->Save(*record, type == RecordType::eNew);
     }
-
 
     RecordTable::~RecordTable()
     {

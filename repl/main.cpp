@@ -210,6 +210,8 @@ unsigned clear(const std::vector<std::string> &)
 
 int main(int argc, char **argv)
 {
+    ruru::Init();
+
     CppReadline::Console console("> ");
     console.registerCommand("clear", clear);
     console.registerCommand("help", info);
