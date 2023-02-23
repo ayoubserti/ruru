@@ -11,28 +11,6 @@
 using namespace ruru;
 using namespace ruru::internal;
 
-namespace ruru::internal
-{
-    class RecordFile
-    {
-    public:
-        RecordFile(std::fstream &file_stream);
-
-        // Read a record from the file.
-        bool Read(RecordId &id, Record *record);
-
-        // Write a record to the file.
-        bool Write(const Record &record);
-
-        // Delete a record from the file.
-        bool Delete(RecordId id);
-
-    private:
-        std::fstream &file_stream_;
-    };
-
-}
-
 // tools
 bool _ApplyFilter(const Record &rec, const Filter &filter)
 {

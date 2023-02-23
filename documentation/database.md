@@ -18,6 +18,7 @@ database
     9- Log files and transactions
    10- Allocator & memory management
    11- REPL (WIP)
+   12- Tests
 
 
 
@@ -48,5 +49,14 @@ In Progress:
  Caches:
    - multiple kind of caches: table cache, query cache, index page cache,..
    - table cache: implemented at the level of storage engine, it allows reducing IO operations, it must be threadsafe
-                  - StoreCache is split into multiple segment, every segment refer to a file portion
+                  - CacheStore is split into multiple segment, every segment refer to a file portion
+                  - Segment define start and end position in the file
+                  - Segment load all the data portion 
 
+
+
+Tests:
+ - prepare a test battery 
+ - no regression tests
+ - merge request testing
+ - 

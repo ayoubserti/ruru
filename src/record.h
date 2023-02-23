@@ -27,6 +27,9 @@ namespace ruru
         Record(std::initializer_list<Field> init)
             : row_id_(-1), fields_{init} {}
         const RecordLength_t GetRowSize() const;
+
+        //hard clone 
+        void Clone(Record& ) const;
     };
     
 }

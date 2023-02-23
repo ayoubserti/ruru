@@ -22,9 +22,9 @@ namespace ruru
         class BasicStorageEngineFactory : public IStorageEngineFactory
         {
 
-            public:
-            virtual IStorageEngine* createStorageEngine( const std::string& name) override;
-            virtual std::string  getName(  ) override ;
+        public:
+            virtual IStorageEngine *createStorageEngine(const std::string &name) override;
+            virtual std::string getName() override;
         };
 
         /*
@@ -88,6 +88,41 @@ namespace ruru
             // Load record by position
             RecordLength_t _LoadRecord(RecordPosition_t position, Record &rec);
         };
+
+        class IRecordLoader
+        {
+            public:
+            // Read a record from the file.
+            virtual bool Read(RecordId &id, Record *record) = 0; 
+
+            // Write a record to the file.
+            virtual bool Write(const Record &record) = 0;
+
+            // Delete a record from the file.
+            virtual bool Delete(RecordId id) = 0; 
+
+        };
+
+        template<typename T>
+        class RecordStream : public IRecordLoader
+        {
+        public:
+            RecordStream(T& file_stream);
+
+            // Read a record from the file.
+            bool Read(RecordId &id, Record *record) override;
+
+            // Write a record to the file.
+            bool Write(const Record &record) override;
+
+            // Delete a record from the file.
+            bool Delete(RecordId id) override;
+
+        private:
+            T &file_stream_;
+        };
+
+        using  RecordFile = RecordStream<std::fstream>;
 
     }
 }
