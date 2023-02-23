@@ -76,3 +76,5 @@ environment_run.sh.env
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,cmake,conan
 build/
+.idea
+cmake-build-debug

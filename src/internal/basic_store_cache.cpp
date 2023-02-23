@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "ruru.h"
 #include "record.h"
-#include "basic_store_cache.h"
-#include "basic_storage_engine.h"
+#include "internal/basic_store_cache.h"
+#include "internal/basic_storage_engine.h"
+#include "internal/RecordStream.h"
 #include "utils/binary_stream.h"
 
 namespace ruru::internal
@@ -94,26 +95,39 @@ namespace ruru::internal
 
         std::streampos cur_pos, start_pos;
         cur_pos = start_pos = 0;
+        ISegment* seg = new CacheSegment(this,start_pos, cur_pos);
 
-        //char buffer[1024 * 1024]; // 1Mb
-        std::array<char , 1024*1024> buffer;
-        do
+        // char buffer[1024 * 1024]; // 1Mb
+        std::array<char, 1024 * 1024> buffer;
+        while ( true )
         {
-            
+
             std::fill(buffer.begin(), buffer.end(), 0);
             in_file.read(buffer.begin(), buffer.size());
-            BinaryStream<decltype(buffer) > stream(buffer);
+            BinaryStream<decltype(buffer)> stream(buffer);
             std::streamsize ss = in_file.gcount();
-            if (ss <= 0 ) 
+            if (ss <= 0)
                 break;
-            
-            ruru::internal::RecordStream<BinaryStream> rec_stream(stream);
-            
-            
 
-        } while (true);
+            RecordStream<BinaryStream<decltype(buffer)> > rec_stream(stream);
+            RecordId id;
+            Record rec;
+            if ( rec_stream.Read(id, &rec) )
+            {
+                seg->SetRecord(id,rec);
+                cur_pos+= rec.GetRowSize();
+            }
+            else
+            {
+                //a stream error occurs
+                
+            }
+
+
+        } 
 
         in_file.close();
+        return true;
     }
 
     std::vector<RecordId> CacheStore::Lookup(const Filters_t &filters)
