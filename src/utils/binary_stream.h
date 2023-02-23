@@ -6,37 +6,46 @@
 template< class Iterable>
 class BinaryStream {
 public:
-    BinaryStream(Iterable& data) : m_data(data), m_pos(0) {}
+    BinaryStream(Iterable& data) : m_data(data), m_pos(0) , m_oper_fails(false){}
 
-    bool Write(const void* data, size_t size) {
-        if ( size + m_pos >= m_data.size() )
-            return false;
-        const unsigned char* ptr = static_cast<const unsigned char*>(data);
-        memcpy(m_data.begin() + m_pos , data,size );
+    bool is_open() { return true;}
+
+    bool fail(){
+        return m_oper_fails;
     }
 
-    size_t Size() const {
+    bool write(const char* data, size_t size) {
+        if ( size + m_pos >= m_data.size() ){
+            m_oper_fails = true;
+            return false;
+        }
+        memcpy(m_data.begin() + m_pos , data,size );
+        return true;
+    }
+
+    size_t size() const {
         return m_data.size();
     }
 
-    void* Data() const {
+    void* data() const {
         return const_cast<void*>(static_cast<const void*>(&m_data[0]));
     }
 
     template<typename T>
     BinaryStream& operator<<(const T& value) {
-        Write(&value, sizeof(value));
+        write(&value, sizeof(value));
         return *this;
     }
 
     template<typename T>
     BinaryStream& operator>>(T& value) {
-        Read(&value, sizeof(value));
+        read(&value, sizeof(value));
         return *this;
     }
 
-    void Read(void* data, size_t size) {
+    void read(char* data, size_t size) {
         if (m_pos + size > m_data.size()) {
+            m_oper_fails = false;
             throw std::runtime_error("Attempted to read past the end of the stream");
         }
         memcpy(data, &m_data[m_pos], size);
@@ -59,9 +68,15 @@ public:
         m_pos = 0;
     }
 
+    bool eof()
+    {
+        m_pos >= m_data.size();
+    }
+
 private:
     Iterable& m_data;
     size_t m_pos;
+    bool m_oper_fails;
 };
 
 

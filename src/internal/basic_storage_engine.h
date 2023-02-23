@@ -101,28 +101,28 @@ namespace ruru
             // Delete a record from the file.
             virtual bool Delete(RecordId id) = 0; 
 
+            virtual ~IRecordLoader(){};
+
         };
 
-        template<typename T>
-        class RecordStream : public IRecordLoader
-        {
-        public:
-            RecordStream(T& file_stream);
+        //class RecordFile : public IRecordLoader
+        //{
+        //public:
+        //    RecordFile(std::fstream& file_stream);
+        //
+        //    // Read a record from the file.
+        //    bool Read(RecordId &id, Record *record) override;
+        //
+        //    // Write a record to the file.
+        //    bool Write(const Record &record) override;
+        //
+        //    // Delete a record from the file.
+        //    bool Delete(RecordId id) override;
+        //
+        //private:
+        //    std::fstream &file_stream_;
+        //};
 
-            // Read a record from the file.
-            bool Read(RecordId &id, Record *record) override;
-
-            // Write a record to the file.
-            bool Write(const Record &record) override;
-
-            // Delete a record from the file.
-            bool Delete(RecordId id) override;
-
-        private:
-            T &file_stream_;
-        };
-
-        using  RecordFile = RecordStream<std::fstream>;
 
     }
 }
