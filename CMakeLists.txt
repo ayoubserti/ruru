@@ -57,3 +57,7 @@ target_link_libraries( repl "readline")
 target_link_libraries(repl ${CONAN_LIBS})
 
 
+# include tests
+add_subdirectory(tests)
+
+

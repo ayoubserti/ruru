@@ -43,34 +43,34 @@ public:
         return *this;
     }
 
-    void read(char* data, size_t size) {
+    void read(char* data, size_t size) noexcept {
         if (m_pos + size > m_data.size()) {
             m_oper_fails = false;
-            throw std::runtime_error("Attempted to read past the end of the stream");
+            //throw std::runtime_error("Attempted to read past the end of the stream");
         }
         memcpy(data, &m_data[m_pos], size);
         m_pos += size;
     }
 
-    void Seek(size_t pos) {
+    void seek(size_t pos) {
         if (pos > m_data.size()) {
             throw std::runtime_error("Attempted to seek past the end of the stream");
         }
         m_pos = pos;
     }
 
-    size_t Tell() const {
+    size_t tell() const {
         return m_pos;
     }
 
-    void Clear() {
+    void clear() {
         m_data.clear();
         m_pos = 0;
     }
 
     bool eof()
     {
-        m_pos >= m_data.size();
+       return m_pos >= m_data.size();
     }
 
 private:

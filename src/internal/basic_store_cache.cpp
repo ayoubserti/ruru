@@ -10,7 +10,7 @@ namespace ruru::internal
 {
 
     // template<uint64_t seg_size>
-    CacheSegment::CacheSegment(CacheStore *parent, std::streampos begin_pos, std::streampos end_pos)
+    CacheSegment::CacheSegment(CacheStore *parent, std::size_t begin_pos, std::size_t end_pos)
         : parent(parent), start(begin_pos), end(end_pos), cur_pos(-1)
     {
     }
@@ -93,38 +93,56 @@ namespace ruru::internal
         if (!in_file.is_open())
             return false;
 
-        std::streampos cur_pos, start_pos;
-        cur_pos = start_pos = 0;
-        ISegment* seg = new CacheSegment(this,start_pos, cur_pos);
+        std::size_t cur_pos, start_pos;
+
+        cur_pos = 0;
+        start_pos = 0;
+        CacheSegment *seg = new CacheSegment(this, start_pos, cur_pos);
 
         // char buffer[1024 * 1024]; // 1Mb
         std::array<char, 1024 * 1024> buffer;
-        while ( true )
+        while (true)
         {
 
             std::fill(buffer.begin(), buffer.end(), 0);
+
+            if ((int64_t)seg->cur_pos >= (int64_t)SEGMENT_SIZE)
+            {
+                seg->end = in_file.tellp();
+                seg->end--;
+                start_pos = in_file.tellp();
+                segments.push_back(seg);
+                CacheSegment *seg = new CacheSegment(this, start_pos, cur_pos);
+            }
             in_file.read(buffer.begin(), buffer.size());
+
             BinaryStream<decltype(buffer)> stream(buffer);
             std::streamsize ss = in_file.gcount();
             if (ss <= 0)
                 break;
 
-            RecordStream<BinaryStream<decltype(buffer)> > rec_stream(stream);
-            RecordId id;
-            Record rec;
-            if ( rec_stream.Read(id, &rec) )
+            while (!stream.eof() && !stream.fail() && stream.tell() < ss) 
             {
-                seg->SetRecord(id,rec);
-                cur_pos+= rec.GetRowSize();
+                RecordStream<BinaryStream<decltype(buffer)>> rec_stream(stream);
+                RecordId id = -1;
+                Record rec;
+                if (rec_stream.Read(id, &rec))
+                {
+                    seg->SetRecord(rec.row_id_, rec);
+                    cur_pos += rec.GetRowSize();
+                }
+                else
+                {
+                    // a stream error occurs
+                    // meaning not all the rec is loaded from disk
+                    // continue loading next part of the rec
+                    std::streamsize remind = stream.tell();
+                    throw std::runtime_error("Not impement");
+                }
             }
-            else
-            {
-                //a stream error occurs
-                
-            }
-
-
-        } 
+            int a = 0;
+        }
+        segments.push_back(seg);
 
         in_file.close();
         return true;

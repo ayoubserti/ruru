@@ -28,7 +28,7 @@ namespace ruru::internal
         virtual bool Flush(const std::string &file_path) = 0;
         virtual bool GetRecord(RecordId id, Record &rec) = 0;
         virtual bool SetRecord(RecordId id, const Record &rec) = 0;
-        virtual ~ISegment();
+        virtual ~ISegment(){};
     };
     /*
         \class CacheSegment
@@ -42,9 +42,9 @@ namespace ruru::internal
         // parent cache
         CacheStore *parent;
         // starting position
-        std::streampos start;
+        std::size_t start;
         // end position
-        std::streampos end;
+        std::size_t end;
         // managed rawids
         std::array<RecordId, SEGMENT_SIZE /*seg_size*/> rawIDSeg;
         // record Segment
@@ -56,7 +56,7 @@ namespace ruru::internal
         friend class CacheStore;
 
         // private ctor
-        CacheSegment(CacheStore *, std::streampos begin_pos, std::streampos end_pos);
+        CacheSegment(CacheStore *, std::size_t begin_pos, std::size_t end_pos);
 
         CacheSegment() = delete;
 

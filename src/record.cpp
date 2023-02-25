@@ -98,6 +98,8 @@ namespace ruru
                     len += *(reinterpret_cast<uint64_t *>(it.value_.get()));
                 break;
             }
+            case DataTypes::eNull:
+            break;
 
             default:
                 throw new std::exception();
