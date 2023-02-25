@@ -19,8 +19,6 @@ make
 | `cmake` | cross-platform build system                   |
 | `c++17` | c++17 compiler                                |
 
-
-
 # Features
 
 - [X] Basic Storage Engine
@@ -35,14 +33,17 @@ make
 - [ ] Tests
 
 # Directory Structure
+
+```cpp
 rurudb
-├── src
-├── repl
-├── tests
-├── example
-├── documentation
-└── include
-    └── ruru.h
+    ├── src
+    ├── repl
+    ├── tests
+    ├── example
+    ├── documentation
+    └── include
+        └── ruru.h
+```
 
 The code for the project is well-organized into several directories, each with its own distinct purpose. The `src` folder contains all of the source code for ``rurudb``, including its implementation and any supporting code. Meanwhile, the `repl` directory is a work-in-progress REPL (Read-Evaluate-Print-Loop) program, designed to give developers a way to experiment with rurudb's capabilities and features.
 
@@ -53,4 +54,3 @@ The `example` directory contains an example program that makes use of ``rurudb``
 In addition to the source code, the project also includes a `documentation` directory that is a work-in-progress. This will eventually contain comprehensive documentation on how to use and interact with ``rurudb``.
 
 Finally, the `include` directory contains all of the public APIs (i.e `ruru.h`), which can be included and utilized by external applications and codebases. The organization of these directories makes it easy for developers to navigate the project and locate the code they need for their specific use cases.
-

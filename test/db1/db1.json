@@ -1,0 +1,1 @@
+[{"columns":[{"column_name":"ID","column_type":"INTEGER"},{"column_name":"AGE","column_type":"INTEGER"},{"column_name":"NAME","column_type":"VARCHAR"}],"table_name":"Employee"}]
