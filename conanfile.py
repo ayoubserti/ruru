@@ -13,7 +13,7 @@ class RurudbConan(ConanFile):
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = {"shared": False, "fPIC": True}
     generators = "cmake"
-    requires = ("cli11/2.3.1","nlohmann_json/3.11.2")
+    requires = ("cli11/2.3.1","nlohmann_json/3.11.2", "gtest/1.13.0")
 
 
     def config_options(self):

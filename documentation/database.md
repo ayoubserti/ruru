@@ -1,12 +1,4 @@
-database
- - table
-    - column
-    - RecordTable
- - StorageEngine  -> file
-   - Record
-   - RecordFile
-   - Field
-
+Functionnalities
     1- Create a new database from JSON schema  --> Application responsability
     2- Persiste Database table into the disc    --> done 
     3- Create Record and populate values       --> done 
@@ -19,6 +11,7 @@ database
    10- Allocator & memory management
    11- REPL (WIP)
    12- Tests
+   13- Lazy load of bigdata
 
 
 
@@ -52,6 +45,7 @@ In Progress:
                   - CacheStore is split into multiple segment, every segment refer to a file portion
                   - Segment define start and end position in the file
                   - Segment load all the data portion 
+
 
 
 
