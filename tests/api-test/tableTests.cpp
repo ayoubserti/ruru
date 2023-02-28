@@ -83,7 +83,7 @@ TEST( Table, GetRecord)
     EXPECT_TRUE(db != nullptr);
     {
         auto tbl = db->getTable("MyTable");
-        auto rec  = tbl->GetRecord(13);
+        auto rec  = tbl->GetRecord(1);
         EXPECT_TRUE(rec != nullptr);
     }
 }
