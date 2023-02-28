@@ -66,8 +66,16 @@ TEST(Table, createRecord)
     }
 }
 
-
-
+TEST ( Table, Search)
+{
+    ruru::DatabasePtr db = ruru::IDatabase::openDatabase("test/newdb.ru");
+    EXPECT_TRUE(db != nullptr);
+    {
+        auto tbl = db->getTable("MyTable");
+        auto recs = tbl->Search({});
+        EXPECT_TRUE(recs != nullptr);
+    }
+}
 
 TEST( Table, GetRecord)
 {
