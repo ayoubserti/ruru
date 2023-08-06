@@ -1,8 +1,18 @@
+prompt open ../test/db1/db1.ru
 open ../test/db1/db1.ru
+promot database tables
 database tables
+prompt database table Employee count
+database table Employee count
+prompt database table Employee all
 database table Employee all
+prompt database table Employee new 
 database table Employee new 
+prompt record set NAME "HEELO"
 record set NAME "HEELO"
+prompt record set ID 10
 record set ID 10
+prompt record set AGE 76
 record set AGE 76
+prompt record save
 record save

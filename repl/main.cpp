@@ -22,13 +22,14 @@ unsigned info(const std::vector<std::string> &args)
 {
     if (args.size() == 1)
     {
-        std::cout << "033[1mruruDB\033[0m is WIP\n"
+        std::cout << "\033[1mruruDB\033[0m is WIP\n"
                   << "this REPL is a quick and dirty application of rurudb library\n"
                   << "command list:\n\n"
                   << "      help    show this help\n"
                   << "      quit    end the program\n"
                   << "      open    open a database\n"
                   << "      create  create a database\n"
+                  << "      prompt  print text\n"
                   << "\n"
                   << "to get the help of command, type help + command\n"
                   << "use it in your own risk\n";
@@ -112,6 +113,35 @@ unsigned search(std::shared_ptr<ruru::Table> tbl, const ruru::Filters_t &filters
     return ret::Ok;
 }
 
+unsigned count_records(std::shared_ptr<ruru::Table> tbl, const ruru::Filters_t &filters)
+{
+    if (tbl == nullptr)
+        return ret::Error;
+
+    auto res = tbl->Search(filters);
+    if (res == nullptr)
+    {
+        std::cout << "0\n";
+        return ret::Ok;
+    }
+    std::cout << res->GetSize() << "\n";
+
+    return ret::Ok;
+}
+unsigned describe_table(std::shared_ptr<ruru::Table> tbl)
+{
+    if (tbl == nullptr)
+        return ret::Error;
+
+    auto cols = tbl->getColumns();
+    for ( auto&& col : cols )
+    {
+        std::cout << col.getName() << "             " << ruru::getStringFromType(col.getType()) << "\n";
+    }
+   
+    return ret::Ok;
+}
+
 unsigned openDB(const std::vector<std::string> &args)
 {
     if (args.size() < 2)
@@ -156,10 +186,19 @@ unsigned dbCmd(const std::vector<std::string> &args)
             if (gRecord != nullptr)
                 gTable = table;
         }
+        else if ( args.size() && args[3] == "count")
+        {
+            return count_records(table, {});
+        }
+        else if ( args.size() && args[3] == "describe")
+        {
+            return describe_table(table);
+        }
     }
 
     return ret::Ok;
 }
+
 
 unsigned record(const std::vector<std::string> &args)
 {
@@ -168,20 +207,19 @@ unsigned record(const std::vector<std::string> &args)
         std::cout << "No record selected" << std::endl;
         return ret::Error;
     }
-    if (args[1] == "save")
+    if ( args[1] == "show")
     {
-        if (gRecord->Save())
-        {
-            return ret::Ok;
-        }
-        else
-        {
-            return ret::Error;
-        }
+        //show the record value
+        return print_rec(gTable, gRecord);
+        
+    }
+    else if (args[1] == "save")
+    {
+        return gRecord->Save() ? ret::Ok : ret::Error;
     }
     if (args.size() > 3 && args[1] == "set")
     {
-
+        std::cout << "set " << args[2] << "   " << args[3] << "\n";
         // set value
         std::regex pattern_str(R"(^\s*"(?:[^"\\]|\\.)*"\s*$)");
         std::regex pattern_integer("[0-9]+");
@@ -195,8 +233,13 @@ unsigned record(const std::vector<std::string> &args)
             std::cout << vv << std::endl;
             gRecord->SetFieldValue(args[2], vv);
         }
-        else if (std::regex_match(args[3], pattern_str))
+        else if (std::regex_match(args[3], pattern_integer))
         {
+            gRecord->SetFieldValue( args[2], (int64_t)std::atoi(args[3].c_str()));
+        }
+        else if (std::regex_match(args[3], pattern_double))
+        {
+            gRecord->SetFieldValue( args[2], (double)std::atof(args[3].c_str()));
         }
     }
     return ret::Ok;
@@ -205,6 +248,19 @@ unsigned record(const std::vector<std::string> &args)
 unsigned clear(const std::vector<std::string> &)
 {
     std::cout << "\033[2J" << std::endl;
+    return ret::Ok;
+}
+
+unsigned prompt(const std::vector<std::string> &args)
+{
+    // show text
+    int i = 1;
+    for (  i =1 ; i< args.size() ; i++)
+    {
+        std::cout << "\033[31m"<< args[i] << " \033[0m";
+    } 
+    if ( i != 1)
+        std::cout << "\n";
     return ret::Ok;
 }
 
@@ -218,6 +274,7 @@ int main(int argc, char **argv)
     console.registerCommand("open", openDB);
     console.registerCommand("database", dbCmd);
     console.registerCommand("record", record);
+    console.registerCommand("prompt" , prompt);
 
     console.executeCommand("help");
 
