@@ -164,6 +164,8 @@ namespace ruru
         bool Eof();
         // move to the next record
         std::shared_ptr<RecordTable> Next();
+        // get size
+        int64_t     GetSize();
     };
 
     struct Filter
@@ -378,6 +380,11 @@ namespace ruru
     bool registerEngineFactory( const std::string& name , IStorageEngineFactory* engineFactory);
 
     IStorageEngineFactory* getEngineFactory( const std::string& name);
+
+
+    //tools
+    DataTypes getTypeFromString(const std::string &name);
+    std::string getStringFromType(DataTypes type);
 
 }
 

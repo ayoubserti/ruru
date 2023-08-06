@@ -61,7 +61,7 @@ auto newDatabase(std::filesystem::path path, const std::string &json_str)
     TablePtr tbl = ptr->newTable(json[0]["table_name"]);
     for (auto &&it : json[0]["columns"])
     {
-        Column cl(it["column_name"], getTypeFromString(it["column_type"]));
+        Column cl(it["column_name"], ::getTypeFromString(it["column_type"]));
         tbl->addColumn(cl);
     }
 
@@ -86,7 +86,7 @@ void saveSchema(IDatabase *db, std::filesystem::path path)
         {
             nlohmann::json obj_col = nlohmann::json({});
             obj_col["column_name"] = it_col.getName();
-            obj_col["column_type"] = getStringFromType(it_col.getType()); // TODO: store type string in column object
+            obj_col["column_type"] = ::getStringFromType(it_col.getType()); // TODO: store type string in column object
             col_arr.push_back(obj_col);
         }
         obj["columns"] = col_arr;
@@ -175,9 +175,14 @@ int main(int argv, char **argc)
     }
     else
     {
-        auto db = IDatabase::openDatabase("test/db1/db1.ru");
-        TablePtr tbl = db->getTable("Employee");
-        auto r = tbl->Search({});
+        //auto db = IDatabase::openDatabase("test/db1/db1.ru");
+        //TablePtr tbl = db->getTable("Employee");
+        
+        auto db = IDatabase::openDatabase("test/newdb.ru");
+        TablePtr tbl = db->getTable("MyTable");
+        
+        auto rec = tbl->GetRecord(16);
+
         std::cout << "Leaks : " << db.use_count() << "\n";
     }
 

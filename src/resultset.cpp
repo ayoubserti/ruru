@@ -42,4 +42,9 @@ namespace ruru
         return rec;
     }
 
+    int64_t         ResultSet::GetSize()
+    {
+        return records_id_.size();
+    }
+
 }
