@@ -5,6 +5,7 @@
 #include "internal/basic_storage_engine.h"
 #include "internal/RecordStream.h"
 #include "utils/binary_stream.h"
+#include "internal/tools.h"
 
 namespace ruru::internal
 {
@@ -36,6 +37,7 @@ namespace ruru::internal
                 {
                     assert(rec->row_id_ == it);
                     assert(rec->GetRowSize() + current_pos <= end);
+                    assert(rec->RunCb());
                     RecordFile rec_file(out);
                     result = rec_file.Write(*rec);
                     if (result != true)
@@ -79,6 +81,23 @@ namespace ruru::internal
             delete it;
     }
 
+    bool CacheSegment::AlignPos(size_t pos_start, size_t& pos_end)
+    {
+        bool result = true;
+        start = pos_start;
+        size_t len = 0;
+        for ( auto&& r: RecSeg )
+        {
+            if ( r== nullptr)
+                break;
+            len+= r->GetRowSize();
+        }
+
+        pos_end = len;
+        end     = len;
+
+        return result;
+    }
 #pragma region CacheStore
 
     CacheStore::CacheStore(const std::string &file_path)
@@ -130,6 +149,8 @@ namespace ruru::internal
                 {
                     seg->SetRecord(rec.row_id_, rec);
                     cur_pos += rec.GetRowSize();
+                    seg->end = in_file.tellp();
+                    seg->end--;
                 }
                 else
                 {
@@ -152,19 +173,98 @@ namespace ruru::internal
     {
         std::vector<RecordId> result;
 
+        for ( auto&& seg : segments)
+        {
+            CacheSegment* c_seg = dynamic_cast<CacheSegment*>(seg);
+            for ( int i = 0; i< c_seg->cur_pos; i++)
+            {
+                // apply filters
+                bool ok = true;
+                auto rec= c_seg->RecSeg[i];
+
+                for (auto &&filter : filters)
+                {
+                    if (!_ApplyFilter(*rec, *filter.get()))
+                    {
+                        ok = false;
+                        break;
+                    }
+                }
+                if (ok)
+                    result.push_back(rec->row_id_);
+                }
+        }
         return result;
     }
 
     // Insert a record in the cache
     bool CacheStore::Insert(const Record &rec)
     {
-        return false;
+        //find the correct Segment
+        bool result = false;
+        if ( rec.row_id_ != -1)
+        {
+            for( auto&& it : segments)
+            {
+                CacheSegment* seg = dynamic_cast<CacheSegment*>(it);
+            
+                if ( seg->cur_pos < SEGMENT_SIZE )
+                {
+                    return it->SetRecord(rec.row_id_, rec);
+                }
+            }
+        }
+        else
+        {
+            //shoul calculate the rowid 
+            //get the last seg
+            auto r_it = segments.rbegin();
+            if ( r_it != segments.rend())
+            {
+                CacheSegment* seg = dynamic_cast<CacheSegment*>(*r_it);
+                if ( seg->cur_pos < SEGMENT_SIZE )
+                {
+                    return seg->SetRecord(rec.row_id_, rec);
+                }
+            }
+            
+        }
+        if ( result == false)
+        {
+            CacheSegment* seg = new CacheSegment(this,-1, -1);
+            result = seg->SetRecord( rec.row_id_, rec);
+            segments.push_back(seg);
+        }
+        return result;
     }
 
     // flush data into disk
     bool CacheStore::Flush()
     {
+        //how to write down the content of the cache into file
+        // iterating over all segments
+        // calculating the positions of the segments then flush 
+        size_t pos = 0;
+        for ( auto&& it : segments)
+        {
+            CacheSegment* seg = dynamic_cast<CacheSegment*>(it);
+            seg->AlignPos(pos , pos);
+            it->Flush(file_path);
+        }
         return false;
+    }
+
+    //get record
+    bool CacheStore::GetRecord(RecordId id,  Record &rec)
+    {
+        bool result = false;
+
+        for (auto&& it : segments )
+        {
+           if (  it->GetRecord(id, rec) )
+            return true;
+        }
+        return result;   
     }
 
     // dtor
@@ -173,6 +273,7 @@ namespace ruru::internal
         for (auto &&it : segments)
             delete it;
     }
+
 
 #pragma endregion
 

@@ -107,4 +107,21 @@ namespace ruru
         }
         return len;
     }
+
+    void Record::AddCallback(const std::string& name,SaveCallback_t& cb )
+    {
+        callbacks_map_[name] = cb;
+    }
+
+    bool Record::RunCb()
+    {
+        for ( auto&& it : callbacks_map_)
+        {
+            if ( it.second(*this)== false)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 }
