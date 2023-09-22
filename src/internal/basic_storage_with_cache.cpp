@@ -5,57 +5,55 @@
 
 #include "pch.h"
 #include "ruru.h"
-#include "internal/basic_storage_engine.h"
+#include "internal/basic_storage_with_cache.h"
 #include "record.h"
 #include "internal/RecordStream.h"
-#include "tools.h"
-
+#include "internal/basic_store_cache.h"
+#include "internal/tools.h"
 using namespace ruru;
 using namespace ruru::internal;
 
-IStorageEngine* BasicStorageEngineFactory::createStorageEngine( const std::string& file_name)
+
+IStorageEngine* BasicCachedStorageEngineFactory::createStorageEngine( const std::string& file_name)
 {
-    return new BasicStorageEngine(file_name);
+    return new BasicCachedStorageEngine(file_name);
 }
 
-std::string  BasicStorageEngineFactory::getName( )
+std::string  BasicCachedStorageEngineFactory::getName( )
 {
-    return _basic_factory;
+    return _basic_cached_factory;
 }
 
 //========================================================================================================
-//                                      BasicStorageEngine
+//                                      BasicCachedStorageEngine
 //========================================================================================================
 
 // Constructor
-BasicStorageEngine::BasicStorageEngine(const std::string &file_name, bool forSchema)
+BasicCachedStorageEngine::BasicCachedStorageEngine(const std::string &file_name)
     : file_name_(file_name),
       current_rec_id_(-1),
-      is_for_schema_(forSchema)
+      cache_store_(new CacheStore(file_name_))
 {
-    if (!is_for_schema_)
-    {
-        // Load the index from the index file
-        LoadIndex();
-        // Load row_id index
-        LoadHiddenIndex();
-    }
+    // Load the index from the index file
+    LoadIndex();
+    // Load row_id index
+    LoadHiddenIndex();
+    cache_store_->Load();
+
 }
 
 // Insert a record into the table
-void BasicStorageEngine::Insert(const Record &record)
+void BasicCachedStorageEngine::Insert(const Record &record)
 {
     // Open the file in append mode
     std::fstream file(file_name_, std::ios::app);
 
-    if (!is_for_schema_)
-    {
-        // Update the index
-        index_.Insert(record.GetKey(), file.tellp());
+    // Update the index
+    index_.Insert(record.GetKey(), file.tellp());
 
-        // update hidden index
-        row_id_index_.Insert(record.row_id_, std::make_pair<RecordLength_t, RecordPosition_t>(record.GetRowSize(), file.tellp()));
-    }
+    // update hidden index
+    row_id_index_.Insert(record.row_id_, std::make_pair<RecordLength_t, RecordPosition_t>(record.GetRowSize(), file.tellp()));
+
 
     RecordFile record_file(file);
     record_file.Write(record);
@@ -65,7 +63,7 @@ void BasicStorageEngine::Insert(const Record &record)
 }
 
 // Select all records from the table
-std::vector<Record> BasicStorageEngine::SelectAll()
+std::vector<Record> BasicCachedStorageEngine::SelectAll()
 {
     // Open the file in read mode
     std::fstream file(file_name_);
@@ -92,10 +90,9 @@ std::vector<Record> BasicStorageEngine::SelectAll()
 }
 
 // Look up a record by key
-std::vector<Record> BasicStorageEngine::Lookup(const std::string &key)
+std::vector<Record> BasicCachedStorageEngine::Lookup(const std::string &key)
 {
-    if (is_for_schema_)
-        return {};
+  
     // Use the index to find the offset of the record in the file
     int offset = index_.Lookup(key);
 
@@ -118,7 +115,7 @@ std::vector<Record> BasicStorageEngine::Lookup(const std::string &key)
     return values;
 }
 
-std::vector<RecordId> BasicStorageEngine::Lookup(const Filters_t &filters)
+std::vector<RecordId> BasicCachedStorageEngine::Lookup(const Filters_t &filters)
 {
 
     std::vector<RecordId> rowsid;
@@ -148,39 +145,18 @@ std::vector<RecordId> BasicStorageEngine::Lookup(const Filters_t &filters)
     return rowsid;
 }
 
-Record *BasicStorageEngine::LoadRecord(RecordId id)
+Record *BasicCachedStorageEngine::LoadRecord(RecordId id)
 {
-    if (!is_for_schema_)
-    {
-        if (!row_id_index_.Exists(id))
+    if (!row_id_index_.Exists(id))
             return nullptr;
-        auto entry = row_id_index_.Lookup(id);
-        Record *rec = new Record();
-        _LoadRecord(entry.second, *rec);
-        return rec;
-    }
-    else
-    {
-        // schema file is a small file, quick scan
-        std::fstream file(file_name_);
-        if (!file.is_open())
-            return nullptr;
-        Record *rec = new Record();
-        while (!file.eof())
-        {
-            RecordFile recfile(file);
-            RecordId zid = -1;
-            if (recfile.Read(zid, rec) && rec->row_id_ == id)
-                return rec;
-        }
-        delete rec;
-
-        return nullptr;
-    }
+    auto entry = row_id_index_.Lookup(id);
+    Record *rec = new Record();
+    _LoadRecord(entry.second, *rec);
+    return rec;
 }
 
 // Load the index from the index file
-void BasicStorageEngine::LoadIndex()
+void BasicCachedStorageEngine::LoadIndex()
 {
     // Open the index file in read mode
     std::ifstream index_file(file_name_ + ".index");
@@ -196,7 +172,7 @@ void BasicStorageEngine::LoadIndex()
     index_file.close();
 }
 // Load the index from the index file
-void BasicStorageEngine::LoadHiddenIndex()
+void BasicCachedStorageEngine::LoadHiddenIndex()
 {
     // Open the index file in read mode
     std::ifstream index_file(file_name_ + ".row.index"); // keylenghpos
@@ -219,7 +195,7 @@ void BasicStorageEngine::LoadHiddenIndex()
 }
 
 // Save the index to the index file
-void BasicStorageEngine::SaveIndex()
+void BasicCachedStorageEngine::SaveIndex()
 {
     // Open the index file in write mode
     {
@@ -255,7 +231,7 @@ void BasicStorageEngine::SaveIndex()
 }
 
 // Save the record into storage
-bool BasicStorageEngine::Save(Record &record, bool isNew)
+bool BasicCachedStorageEngine::Save(Record &record, bool isNew)
 {
     if (isNew)
     {
@@ -299,21 +275,19 @@ bool BasicStorageEngine::Save(Record &record, bool isNew)
     return false;
 }
 
-bool BasicStorageEngine::Flush()
+bool BasicCachedStorageEngine::Flush()
 {
-    if (!is_for_schema_)
-    {
-        SaveIndex();
-    }
+    SaveIndex();
+    cache_store_->Flush();
     return true;
 }
 
-bool BasicStorageEngine::DropStorage()
+bool BasicCachedStorageEngine::DropStorage()
 {
     return std::filesystem::remove(file_name_);
 }
 
-RecordLength_t BasicStorageEngine::_LoadRecord(RecordPosition_t position, Record &rec)
+RecordLength_t BasicCachedStorageEngine::_LoadRecord(RecordPosition_t position, Record &rec)
 {
     RecordLength_t len = 0;
     std::fstream file(file_name_);
@@ -328,57 +302,3 @@ RecordLength_t BasicStorageEngine::_LoadRecord(RecordPosition_t position, Record
     file.close();
     return len;
 }
-
-
-
-
-// RecordFile
-//RecordFile::RecordFile(std::fstream &inFile)
-//    : file_stream_(inFile) {}
-//
-//bool RecordFile::Read(RecordId &id, Record *record)
-//{
-//    bool result = true;
-//    if (id == -1)
-//    {
-//        // get the record in the current position
-//        file_stream_.read(reinterpret_cast<char *>(&record->row_id_), sizeof(record->row_id_));
-//        if (file_stream_.fail())
-//            return false;
-//
-//        // Read field list
-//        uint64_t field_nbr;
-//        file_stream_.read(reinterpret_cast<char *>(&field_nbr), sizeof(field_nbr));
-//        if (file_stream_.fail())
-//            return false;
-//
-//        record->fields_.resize(field_nbr);
-//        for (uint64_t i = 0; i < field_nbr; ++i)
-//        {
-//            if (!ReadField(file_stream_, record->fields_[i]))
-//            {
-//                // error
-//                return false;
-//            }
-//        }
-//    }
-//    return true;
-//}
-//
-//bool RecordFile::Write(const Record &record)
-//{
-//    RecordId id = record.row_id_;
-//    uint64_t z = record.fields_.size();
-//    file_stream_.write(reinterpret_cast<const char *>(&id), sizeof(record.row_id_));
-//    file_stream_.write(reinterpret_cast<const char *>(&z), sizeof(uint64_t));
-//    for (auto &&it : record.fields_)
-//    {
-//        WriteField(file_stream_, it);
-//    }
-//    return true;
-//}
-//
-//bool RecordFile::Delete(RecordId id)
-//{
-//    return false;
-//}

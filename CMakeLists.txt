@@ -22,7 +22,7 @@ target_precompile_headers(rurudb PRIVATE ${PCH_FILE})
 
 ########################## EXAMPLE ################################
 # Example
-file(GLOB SOURCES_EXAMPLE "example/*.cpp" "example/*.h")
+file(GLOB SOURCES_EXAMPLE "example/main.cpp" "example/*.h")
 add_executable(example_ruru ${SOURCES_EXAMPLE})
 #precompiled header
 target_precompile_headers(example_ruru PRIVATE "example/pch.h")
@@ -37,6 +37,22 @@ target_link_libraries(example_ruru "rurudb")
 # Link the external libraries
 target_link_libraries(example_ruru ${CONAN_LIBS})
 
+########################## EXAMPLE 2 ################################
+# Example
+file(GLOB SOURCES_EXAMPLE_2 "example/example2.cpp" "example/*.h")
+add_executable(example_ruru_2 ${SOURCES_EXAMPLE_2})
+#precompiled header
+target_precompile_headers(example_ruru_2 PRIVATE "example/pch.h")
+
+# Add include 
+target_include_directories(example_ruru_2 PUBLIC "include")
+# Make the example dependent of rurudb
+add_dependencies(example_ruru_2 rurudb)
+# Link with rurudb library
+target_link_libraries(example_ruru_2 "rurudb")
+
+# Link the external libraries
+target_link_libraries(example_ruru_2 ${CONAN_LIBS})
 
 ########################## REPL ################################
 # Example
@@ -56,8 +72,9 @@ target_link_libraries( repl "readline")
 # Link the external libraries
 target_link_libraries(repl ${CONAN_LIBS})
 
-
+option( WITH_TESTS "with tests" off)
 # include tests
-add_subdirectory(tests)
-
+if (  ${WITH_TESTS})
+    add_subdirectory(tests)
+endif()
 

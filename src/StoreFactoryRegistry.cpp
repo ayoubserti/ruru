@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "ruru.h"
 #include "internal/basic_storage_engine.h"
+#include "internal/basic_storage_with_cache.h"
 
 static std::map<std::string, ruru::IStorageEngineFactory *> gEngineFactoryRegistry;
 
@@ -28,6 +29,12 @@ namespace ruru
             internal::BasicStorageEngineFactory *factory = new internal::BasicStorageEngineFactory();
             gEngineFactoryRegistry[_basic_factory] = factory;
         }
+        if (gEngineFactoryRegistry.find(_basic_cached_factory) == gEngineFactoryRegistry.end())
+        {
+            internal::BasicCachedStorageEngineFactory *factory = new internal::BasicCachedStorageEngineFactory();
+            gEngineFactoryRegistry[_basic_cached_factory] = factory;
+        }
+        
     }
 
     void Init()

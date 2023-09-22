@@ -60,6 +60,9 @@ namespace ruru::internal
 
         CacheSegment() = delete;
 
+        //file position alignement
+        bool AlignPos(size_t pos_start, size_t& pos_end);
+
     public:
         bool Flush(const std::string &file_path) override;
         bool GetRecord(RecordId id, Record &rec) override;
@@ -71,7 +74,7 @@ namespace ruru::internal
     {
         std::string file_path;
         std::vector<ISegment *> segments;
-
+        CacheStore() = delete;
     public:
         // ctor
         CacheStore(const std::string &file_path);
@@ -87,6 +90,8 @@ namespace ruru::internal
 
         // flush data into disk
         bool Flush();
+
+        bool GetRecord(RecordId id,  Record &rec);
 
         // dtor
         virtual ~CacheStore();

@@ -63,6 +63,7 @@ TEST(Table, createRecord)
         rec->SetFieldValue("col1", (int64_t)20);
         rec->SetFieldValue("col2", "Hello");
         EXPECT_TRUE(rec->Save());
+        db->saveSchema("test/newdb.ru");
     }
 }
 

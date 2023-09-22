@@ -47,13 +47,19 @@ namespace ruru
         eLesserOrEq,
         eInRange,
         eOutRange,
+        eIsNull,
+        eIsNotNull,
 
         eUnknown = 0
     };
 
+    struct NullValue {};
+
 
     static const char* db_extension = ".ru";
     static const char* _basic_factory = "_basic_factory";
+    static const char* _basic_cached_factory = "_basic_cached_factory";
+    
 
     //forward class
     class Record;
@@ -206,6 +212,16 @@ namespace ruru
                 return v < value1;
             }
             else if (oper == OperatorType::eLesserOrEq)
+            {
+                Value_t v = value;
+                return v <= value1;
+            }
+            else if (oper == OperatorType::eIsNull)
+            {
+                Value_t v = value;
+                return v <= value1;
+            }
+            else if (oper == OperatorType::eIsNotNull)
             {
                 Value_t v = value;
                 return v <= value1;

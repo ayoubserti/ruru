@@ -19,8 +19,11 @@ namespace ruru
 
     struct Record
     {
+
+        using SaveCallback_t = std::function<bool(Record&)>;
         RecordId row_id_;
         std::vector<Field> fields_;
+        std::map<std::string, SaveCallback_t> callbacks_map_;
         const std::string GetKey() const;
 
         Record() : row_id_(-1){};
@@ -30,6 +33,8 @@ namespace ruru
 
         //hard clone 
         void Clone(Record& ) const;
+        bool RunCb();
+        void AddCallback(const std::string& name,SaveCallback_t& cb );
     };
     
 }

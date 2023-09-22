@@ -1,6 +1,6 @@
 prompt open ../test/db1/db1.ru
 open ../test/db1/db1.ru
-promot database tables
+prompt database tables
 database tables
 prompt database table Employee count
 database table Employee count

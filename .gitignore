@@ -78,3 +78,6 @@ environment_run.sh.env
 build/
 .idea
 cmake-build-debug
+test/db1/*.ru
+test/db1/*.ru.row.index
+test/db1/*.ru.index
